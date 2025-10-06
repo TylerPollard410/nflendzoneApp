@@ -78,8 +78,8 @@ usethis::use_coverage()
 ## (You'll need GitHub there)
 # usethis::use_github(protocol = "ssh")
 
-# GitHub Actions
-usethis::use_github_action()
+# GitHub Actions (DISABLED - Using local workflow)
+# usethis::use_github_action()
 # Chose one of the three
 # See https://usethis.r-lib.org/reference/use_github_action.html
 # usethis::use_github_action_check_release()
