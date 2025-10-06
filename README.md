@@ -5,6 +5,10 @@
 
 <!-- badges: start -->
 
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![Codecov test
+coverage](https://codecov.io/gh/TylerPollard410/nflendzoneApp/graph/badge.svg)](https://app.codecov.io/gh/TylerPollard410/nflendzoneApp)
 <!-- badges: end -->
 
 ## Installation
@@ -31,26 +35,34 @@ This README has been compiled on the
 
 ``` r
 Sys.time()
-#> [1] "2025-10-06 04:00:06 EDT"
+#> [1] "2025-10-06 09:12:47 EDT"
 ```
 
 Here are the tests results and package coverage:
 
 ``` r
 devtools::check(quiet = TRUE)
-#> ══ Documenting ═════════════════════════════════════════════════════════════════
-#> ℹ Installed roxygen2 version (7.3.3) doesn't match required (7.1.1)
-#> ✖ `check()` will not re-document this package
+#> ℹ Loading nflendzoneApp
 #> ── R CMD check results ──────────────────────────────── nflendzoneApp 0.1.0 ────
-#> Duration: 26.3s
+#> Duration: 3.8s
 #> 
-#> 0 errors ✔ | 0 warnings ✔ | 0 notes ✔
+#> ❯ checking package dependencies ... ERROR
+#>   VignetteBuilder package not declared: ‘quarto’
+#>   
+#>   See section ‘The DESCRIPTION file’ in the ‘Writing R Extensions’
+#>   manual.
+#> 
+#> 1 error ✖ | 0 warnings ✔ | 0 notes ✔
+#> Error: R CMD check found ERRORs
 ```
 
 ``` r
 covr::package_coverage()
-#> nflendzoneApp Coverage: 0.00%
-#> R/app_config.R: 0.00%
-#> R/app_ui.R: 0.00%
+#> nflendzoneApp Coverage: 96.92%
 #> R/run_app.R: 0.00%
+#> R/app_config.R: 100.00%
+#> R/app_ui.R: 100.00%
+#> R/golem_utils_server.R: 100.00%
+#> R/golem_utils_ui.R: 100.00%
+#> R/mod_standings.R: 100.00%
 ```

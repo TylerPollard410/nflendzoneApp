@@ -40,12 +40,12 @@ golem::install_dev_deps()
 ## See ?usethis for more information
 usethis::use_mit_license("Tyler Pollard") # You can set another license here
 golem::use_readme_rmd(open = FALSE)
-devtools::build_readme()
 # Note that `contact` is required since usethis version 2.1.5
 # If your {usethis} version is older, you can remove that param
 usethis::use_code_of_conduct(contact = "Tyler Pollard")
 usethis::use_lifecycle_badge("Experimental")
 usethis::use_news_md(open = FALSE)
+devtools::build_readme()
 
 ## Init Testing Infrastructure ----
 ## Create a template for tests
