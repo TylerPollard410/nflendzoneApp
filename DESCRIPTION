@@ -12,6 +12,7 @@ BugReports: https://github.com/TylerPollard410/nflendzoneApp/issues
 Depends: 
     R (>= 4.2)
 Imports: 
+    bs4Dash,
     config,
     golem,
     shiny

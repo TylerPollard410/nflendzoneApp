@@ -54,7 +54,8 @@ golem::use_recommended_tests()
 ## Favicon ----
 # If you want to change the favicon (default is golem's one)
 golem::use_favicon(path = "inst/app/www/hex-nflendzone-icon.png") # path = "path/to/ico". Can be an online file.
-golem::remove_favicon() # Uncomment to remove the default favicon
+# golem::remove_favicon() # Uncomment to remove the default favicon
+usethis::use_logo("inst/app/www/hex-nflendzone-icon.png")
 
 ## Add helper functions ----
 golem::use_utils_ui(with_test = TRUE)

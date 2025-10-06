@@ -32,7 +32,7 @@ usethis::use_package("bs4Dash", type = "Imports", min_version = NULL)
 ## Create a module infrastructure in R/
 # golem::add_module(name = "..", fct = NULL, utils = NULL, with_test = TRUE, open = FALSE) # Name of the module
 golem::add_module(name = "standings", with_test = TRUE, open = FALSE)
-golem::add_module(name = "team_rankings", with_test = TRUE, open = FALSE)
+golem::add_module(name = "team_rankings", with_test = FALSE, open = FALSE)
 
 ## Add helper functions ----
 ## Creates fct_* and utils_*
@@ -54,9 +54,10 @@ golem::add_css_file("custom", open = FALSE)
 
 ## Tests ----
 ## Add one line by test you want to create
-# usethis::use_test("app")
+usethis::use_test("app")
 
 # Documentation
+usethis::use_package_doc()
 
 ## Vignette ----
 usethis::use_vignette("nflendzoneApp.qmd")
@@ -65,7 +66,7 @@ devtools::build_vignettes()
 ## Code Coverage----
 ## Set the code coverage service ("codecov" or "coveralls")
 usethis::use_coverage()
-usethis:::use_codecov_badge()
+# usethis:::use_codecov_badge()
 
 # Create a summary readme for the testthat subdirectory
 # covr::covrpage()
@@ -78,7 +79,7 @@ usethis:::use_codecov_badge()
 # usethis::use_github(protocol = "ssh")
 
 # GitHub Actions
-# usethis::use_github_action()
+usethis::use_github_action()
 # Chose one of the three
 # See https://usethis.r-lib.org/reference/use_github_action.html
 # usethis::use_github_action_check_release()

@@ -1,11 +1,15 @@
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # `{nflendzoneApp}`
 
 <!-- badges: start -->
 
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) [![Codecov test coverage](https://codecov.io/gh/TylerPollard410/nflendzoneApp/graph/badge.svg)](https://app.codecov.io/gh/TylerPollard410/nflendzoneApp)
-
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![Codecov test
+coverage](https://codecov.io/gh/TylerPollard410/nflendzoneApp/graph/badge.svg)](https://app.codecov.io/gh/TylerPollard410/nflendzoneApp?branch=main)
+[![R-CMD-check](https://github.com/TylerPollard410/nflendzoneApp/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/TylerPollard410/nflendzoneApp/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 ## Installation
@@ -32,7 +36,7 @@ This README has been compiled on the
 
 ``` r
 Sys.time()
-#> [1] "2025-10-06 09:52:23 EDT"
+#> [1] "2025-10-06 15:05:59 EDT"
 ```
 
 Here are the tests results and package coverage:
@@ -40,15 +44,20 @@ Here are the tests results and package coverage:
 ``` r
 devtools::check(quiet = TRUE)
 #> ℹ Loading nflendzoneApp
-#> ── R CMD check results ──────────────────────────────── nflendzoneApp 0.1.0 ────
-#> Duration: 45.3s
+#> ── R CMD check results ───────────────────────────────────────────────────────── nflendzoneApp 0.1.0 ────
+#> Duration: 44.9s
 #> 
-#> 0 errors ✔ | 0 warnings ✔ | 0 notes ✔
+#> ❯ checking dependencies in R code ... NOTE
+#>   Namespace in Imports field not imported from: ‘bs4Dash’
+#>     All declared Imports should be used.
+#> 
+#> 0 errors ✔ | 0 warnings ✔ | 1 note ✖
 ```
 
 ``` r
 covr::package_coverage()
-#> nflendzoneApp Coverage: 96.92%
+#> nflendzoneApp Coverage: 95.32%
+#> R/mod_team_rankings.R: 0.00%
 #> R/run_app.R: 0.00%
 #> R/app_config.R: 100.00%
 #> R/app_ui.R: 100.00%

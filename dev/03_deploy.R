@@ -13,10 +13,28 @@
 
 # Test your app
 
+## Pre-deployment checklist ----
+## 1. Update version number in DESCRIPTION
+## 2. Update NEWS.md with changes
+## 3. Run all checks below
+## 4. Commit all changes
+
 ## Run checks ----
 ## Check the package before sending to prod
 devtools::check()
-rhub::check_for_cran()
+
+## Check on multiple platforms (if submitting to CRAN)
+# rhub::rhub_check()  # Newer rhub interface
+# rhub::check_for_cran()  # Legacy interface
+
+## Run tests with coverage
+covr::package_coverage()
+
+## Check spelling
+spelling::spell_check_package()
+
+## Test the app locally
+golem::run_dev()
 
 # Deploy
 
@@ -26,36 +44,80 @@ rhub::check_for_cran()
 devtools::build()
 
 ## Docker ----
-## If you want to deploy via a generic Dockerfile
-golem::add_dockerfile_with_renv()
-## If you want to deploy to ShinyProxy
-golem::add_dockerfile_with_renv_shinyproxy()
+## Choose the appropriate Dockerfile for your deployment target
 
-## Posit ----
+# Option 1: Generic Docker deployment with renv (RECOMMENDED)
+# golem::add_dockerfile_with_renv()
+
+# Option 2: Docker without renv (lighter but less reproducible)
+# golem::add_dockerfile()
+
+# Option 3: ShinyProxy deployment
+# golem::add_dockerfile_with_renv_shinyproxy()
+
+# Option 4: Heroku deployment
+# golem::add_dockerfile_heroku()
+
+## After creating Dockerfile, build and test:
+# docker build -t nflendzoneapp .
+# docker run -p 3838:3838 nflendzoneapp
+
+## Posit Connect / ShinyApps.io / Shiny Server ----
 ## If you want to deploy on Posit related platforms
-golem::add_positconnect_file()
-golem::add_shinyappsio_file()
-golem::add_shinyserver_file()
+
+# Option 1: Posit Connect (formerly RStudio Connect)
+# golem::add_positconnect_file()
+
+# Option 2: ShinyApps.io (cloud hosting)
+# golem::add_shinyappsio_file()
+
+# Option 3: Shiny Server (open source, self-hosted)
+# golem::add_shinyserver_file()
 
 ## Deploy to Posit Connect or ShinyApps.io ----
 
-## Add/update manifest file (optional; for Git backed deployment on Posit )
-rsconnect::writeManifest()
+## Step 1: Create app.R in root (if not exists)
+# golem::add_rstudioconnect_file()  # Creates app.R that loads your package
 
-## In command line.
-rsconnect::deployApp(
-	appName = desc::desc_get_field("Package"),
-	appTitle = desc::desc_get_field("Package"),
-	appFiles = c(
-		# Add any additional files unique to your app here.
-		"R/",
-		"inst/",
-		"data/",
-		"NAMESPACE",
-		"DESCRIPTION",
-		"app.R"
-	),
-	appId = rsconnect::deployments(".")$appID,
-	lint = FALSE,
-	forceUpdate = TRUE
-)
+## Step 2: Add/update manifest file (optional; for Git-backed deployment)
+# rsconnect::writeManifest()
+
+## Step 3: Deploy via rsconnect
+# First time: Set up your account
+# rsconnect::setAccountInfo(name = "your-account", token = "TOKEN", secret = "SECRET")
+
+## Deploy command
+# rsconnect::deployApp(
+#   appName = desc::desc_get_field("Package"),
+#   appTitle = desc::desc_get_field("Title"),
+#   appFiles = c(
+#     # Core package files
+#     "R/",
+#     "inst/",
+#     "data/",
+#     "NAMESPACE",
+#     "DESCRIPTION",
+#     "app.R"
+#     # Add any additional files unique to your app here
+#     # "www/",
+#     # "config.yml"
+#   ),
+#   appId = rsconnect::deployments(".")$appID,
+#   lint = FALSE,
+#   forceUpdate = TRUE
+# )
+
+## Alternative: Deploy using GitHub Actions
+## See: usethis::use_github_action("shiny-deploy")
+
+## AWS / Cloud Deployment ----
+## For AWS, Azure, GCP deployment, see:
+# https://engineering-shiny.org/deploy.html
+
+## Performance monitoring ----
+## Add {shinyloadtest} for load testing
+# shinyloadtest::record_session("http://127.0.0.1:3838")
+# shinyloadtest::run_loadtest()
+
+## Add {profvis} for profiling
+# profvis::profvis({ run_app() })
