@@ -1,14 +1,11 @@
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # `{nflendzoneApp}`
 
 <!-- badges: start -->
 
-[![Lifecycle:
-experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![Codecov test
-coverage](https://codecov.io/gh/TylerPollard410/nflendzoneApp/graph/badge.svg)](https://app.codecov.io/gh/TylerPollard410/nflendzoneApp)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) [![Codecov test coverage](https://codecov.io/gh/TylerPollard410/nflendzoneApp/graph/badge.svg)](https://app.codecov.io/gh/TylerPollard410/nflendzoneApp)
+
 <!-- badges: end -->
 
 ## Installation
@@ -35,7 +32,7 @@ This README has been compiled on the
 
 ``` r
 Sys.time()
-#> [1] "2025-10-06 09:12:47 EDT"
+#> [1] "2025-10-06 09:52:23 EDT"
 ```
 
 Here are the tests results and package coverage:
@@ -44,16 +41,9 @@ Here are the tests results and package coverage:
 devtools::check(quiet = TRUE)
 #> ℹ Loading nflendzoneApp
 #> ── R CMD check results ──────────────────────────────── nflendzoneApp 0.1.0 ────
-#> Duration: 3.8s
+#> Duration: 45.3s
 #> 
-#> ❯ checking package dependencies ... ERROR
-#>   VignetteBuilder package not declared: ‘quarto’
-#>   
-#>   See section ‘The DESCRIPTION file’ in the ‘Writing R Extensions’
-#>   manual.
-#> 
-#> 1 error ✖ | 0 warnings ✔ | 0 notes ✔
-#> Error: R CMD check found ERRORs
+#> 0 errors ✔ | 0 warnings ✔ | 0 notes ✔
 ```
 
 ``` r

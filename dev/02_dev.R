@@ -60,7 +60,7 @@ golem::add_css_file("custom", open = FALSE)
 
 ## Vignette ----
 usethis::use_vignette("nflendzoneApp.qmd")
-# devtools::build_vignettes()
+devtools::build_vignettes()
 
 ## Code Coverage----
 ## Set the code coverage service ("codecov" or "coveralls")

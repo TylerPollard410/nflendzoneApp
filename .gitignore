@@ -6,3 +6,8 @@
 .quarto
 inst/doc
 **/.quarto/
+
+/.quarto/
+**/*.quarto_ipynb
+/doc/
+/Meta/
