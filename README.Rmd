@@ -23,10 +23,11 @@ output: github_document
 
 ## Installation
 
-You can install the development version of `{nflendzoneApp}` like so:
+You can install the development version of `{nflendzoneApp}` from [GitHub](https://github.com/TylerPollard410/nflendzoneApp):
 
-```{r}
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
+```{r, eval = FALSE}
+# install.packages("pak")
+pak::pak("TylerPollard410/nflendzoneApp")
 ```
 
 ## Run
