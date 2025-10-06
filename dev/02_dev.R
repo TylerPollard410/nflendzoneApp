@@ -57,46 +57,47 @@ golem::add_css_file("custom", open = FALSE)
 usethis::use_test("app")
 
 # Documentation
-usethis::use_package_doc()
 
 ## Vignette ----
-usethis::use_vignette("nflendzoneApp.qmd")
-devtools::build_vignettes()
+usethis::use_vignette("nflendzoneApp")
+
 
 ## Code Coverage----
 ## Set the code coverage service ("codecov" or "coveralls")
 usethis::use_coverage()
-# usethis:::use_codecov_badge()
 
 # Create a summary readme for the testthat subdirectory
-# covr::covrpage()
+# covrpage::covrpage()
 
 ## CI ----
-## Use this part of the script if you need to set up a CI
-## service for your application
-##
-## (You'll need GitHub there)
-# usethis::use_github(protocol = "ssh")
+# ## Use this part of the script if you need to set up a CI
+# ## service for your application
+# ##
+# ## (You'll need GitHub there)
+# usethis::use_github()
 
-# GitHub Actions (DISABLED - Using local workflow)
+# # GitHub Actions
 # usethis::use_github_action()
-# Chose one of the three
-# See https://usethis.r-lib.org/reference/use_github_action.html
+# # Chose one of the three
+# # See https://usethis.r-lib.org/reference/use_github_action.html
 # usethis::use_github_action_check_release()
 # usethis::use_github_action_check_standard()
 # usethis::use_github_action_check_full()
-# Add action for PR
+# # Add action for PR
 # usethis::use_github_action_pr_commands()
 
-# Circle CI
+# # Circle CI
 # usethis::use_circleci()
 # usethis::use_circleci_badge()
 
-# Jenkins
+# # Jenkins
 # usethis::use_jenkins()
 
-# GitLab CI
+# # GitLab CI
 # usethis::use_gitlab_ci()
+
+# Build README ----
+devtools::build_readme()
 
 # You're now set! ----
 # go to dev/03_deploy.R
