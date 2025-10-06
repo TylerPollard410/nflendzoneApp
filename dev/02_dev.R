@@ -68,7 +68,7 @@ usethis::use_coverage()
 usethis:::use_codecov_badge()
 
 # Create a summary readme for the testthat subdirectory
-covr::covrpage()
+# covr::covrpage()
 
 ## CI ----
 ## Use this part of the script if you need to set up a CI
