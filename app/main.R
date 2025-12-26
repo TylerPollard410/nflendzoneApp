@@ -1,12 +1,92 @@
 box::use(
-  shiny[bootstrapPage, div, moduleServer, NS, renderUI, tags, uiOutput],
+  bsicons[bs_icon],
+  bslib[
+    bs_theme,
+    input_dark_mode,
+    nav_item,
+    nav_menu,
+    nav_panel,
+    nav_spacer,
+    navbar_options,
+    navset_pill,
+    page_navbar
+  ],
+  shiny[NS, bootstrapPage, div, moduleServer, p, br, renderUI, tags, uiOutput],
+)
+
+box::use(
+  app /
+    logic /
+    data_startup[
+      teams_data,
+      teams,
+      game_data,
+      game_data_long,
+      season_weeks_df,
+      base_repo_url,
+      season_standings_data,
+      team_features_data
+    ],
+  app / view / standings
 )
 
 #' @export
 ui <- function(id) {
   ns <- NS(id)
-  bootstrapPage(
-    uiOutput(ns("message"))
+  page_navbar(
+    title = "NFL EndZone Anaytics",
+    id = ns("navbar"),
+    theme = bs_theme(
+      version = 5,
+      primary = "purple",
+      info = "#eec900"
+    ),
+    fillable_mobile = TRUE,
+    selected = "standings",
+    navbar_options = navbar_options(
+      bg = "purple",
+    ),
+    nav_panel(
+      title = "Home",
+      value = "home",
+      uiOutput(ns("message"))
+    ),
+    nav_panel(
+      title = "Standings",
+      value = "standings",
+      icon = bs_icon("table"),
+      standings$mod_standings_ui(ns("standings"))
+    ),
+    nav_menu(
+      title = "More",
+      icon = bs_icon("three-dots"),
+      nav_panel(
+        "Test",
+        icon = bs_icon("info-circle"),
+        div(
+          teams_data$team_name[1],
+          br(),
+          game_data$game_id[1],
+          br(),
+          game_data_long$game_id[1],
+          br(),
+          season_weeks_df$week_seq[1],
+          br(),
+          base_repo_url,
+          br(),
+          season_standings_data$team[1],
+          br(),
+          team_features_data$team[1]
+        )
+      )
+    ),
+    nav_spacer(),
+    nav_item(
+      input_dark_mode(
+        id = ns("dark_mode"),
+        mode = "dark"
+      )
+    )
   )
 }
 
@@ -17,9 +97,17 @@ server <- function(id) {
       div(
         style = "display: flex; justify-content: center; align-items: center; height: 100vh;",
         tags$h1(
-          tags$a("Check out Rhino docs!", href = "https://appsilon.github.io/rhino/")
+          tags$a(
+            "Check out Rhino docs!",
+            href = "https://appsilon.github.io/rhino/"
+          )
         )
       )
     })
+    standings$mod_standings_server(
+      "standings",
+      teams_data = teams_data,
+      season_standings_data = season_standings_data
+    )
   })
 }
