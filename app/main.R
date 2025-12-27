@@ -9,9 +9,11 @@ box::use(
     nav_spacer,
     navbar_options,
     navset_pill,
-    page_navbar
+    page_navbar,
+    navset_card_pill
   ],
   shiny[NS, bootstrapPage, div, moduleServer, p, br, renderUI, tags, uiOutput],
+  thematic[thematic_shiny],
 )
 
 box::use(
@@ -27,7 +29,8 @@ box::use(
       season_standings_data,
       team_features_data
     ],
-  app / view / standings
+  app / view / standings,
+  app / view / standings2
 )
 
 #' @export
@@ -55,7 +58,8 @@ ui <- function(id) {
       title = "Standings",
       value = "standings",
       icon = bs_icon("table"),
-      standings$mod_standings_ui(ns("standings"))
+      #standings$mod_standings_ui(ns("standings"))
+      standings2$ui(ns("standings2"))
     ),
     nav_menu(
       title = "More",
@@ -90,6 +94,8 @@ ui <- function(id) {
   )
 }
 
+thematic_shiny()
+
 #' @export
 server <- function(id) {
   moduleServer(id, function(input, output, session) {
@@ -104,10 +110,12 @@ server <- function(id) {
         )
       )
     })
-    standings$mod_standings_server(
-      "standings",
-      teams_data = teams_data,
-      season_standings_data = season_standings_data
-    )
+    # standings$mod_standings_server(
+    #   "standings",
+    #   teams_data = teams_data,
+    #   season_standings_data = season_standings_data
+    # )
+
+    standings2$server("standings2")
   })
 }
