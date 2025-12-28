@@ -12,6 +12,7 @@ box::use(
     page_navbar,
     navset_card_pill
   ],
+  reactable[reactable, renderReactable, reactableOutput],
   shiny[NS, bootstrapPage, div, moduleServer, p, br, renderUI, tags, uiOutput],
   thematic[thematic_shiny],
 )
@@ -27,10 +28,12 @@ box::use(
       season_weeks_df,
       base_repo_url,
       season_standings_data,
-      team_features_data
+      team_features_data,
+      team_strength_negbinom_summary
     ],
   app / view / standings,
-  app / view / standings2
+  app / view / standings2,
+  app / view / predictions,
 )
 
 #' @export
@@ -44,7 +47,7 @@ ui <- function(id) {
       primary = "purple",
       info = "#eec900"
     ),
-    fillable_mobile = TRUE,
+    fillable_mobile = FALSE,
     selected = "standings",
     navbar_options = navbar_options(
       bg = "purple",
@@ -52,6 +55,7 @@ ui <- function(id) {
     nav_panel(
       title = "Home",
       value = "home",
+      reactableOutput(ns("test_df")),
       uiOutput(ns("message"))
     ),
     nav_panel(
@@ -62,26 +66,12 @@ ui <- function(id) {
       standings2$ui(ns("standings2"))
     ),
     nav_menu(
-      title = "More",
+      title = "Predictions",
       icon = bs_icon("three-dots"),
       nav_panel(
-        "Test",
+        "Games",
         icon = bs_icon("info-circle"),
-        div(
-          teams_data$team_name[1],
-          br(),
-          game_data$game_id[1],
-          br(),
-          game_data_long$game_id[1],
-          br(),
-          season_weeks_df$week_seq[1],
-          br(),
-          base_repo_url,
-          br(),
-          season_standings_data$team[1],
-          br(),
-          team_features_data$team[1]
-        )
+        predictions$ui(ns("predictions_games"))
       )
     ),
     nav_spacer(),
@@ -117,5 +107,7 @@ server <- function(id) {
     # )
 
     standings2$server("standings2")
+
+    predictions$server("predictions_games")
   })
 }
