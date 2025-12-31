@@ -30,12 +30,14 @@ add_week_seq <- function(df) {
     dplyr$relocate(week_seq, .after = week)
 }
 
-#' @param seasons Integer vector of seasons to include (default: 2006 through the most recent available season).
+#' @param seasons Integer vector of seasons to include (default: 2006 through the
+#'   most recent available season).
 #' @export
 load_game_data <- function(seasons = 2006:most_recent_season()) {
-  games <- load_schedules(seasons = TRUE) # load schedule for specified seasons
+  seasons <- unique(as.integer(seasons))
+  games <- load_schedules(seasons = seasons)
   games |>
-    dplyr$filter(season >= min(seasons)) |> # ensure only seasons at or after the minimum
+    dplyr$filter(season %in% seasons) |>
     dplyr$mutate(
       home_team = clean_team_abbrs(home_team),
       away_team = clean_team_abbrs(away_team),
@@ -134,7 +136,8 @@ load_game_data <- function(seasons = 2006:most_recent_season()) {
 #'   `team_score`, `opponent_score`, `winner`, and `location`.
 #'
 #' @return A tibble in long format with one row per team-game, including:
-#'   - Per-team cumulative statistics (`team_GP`, `team_W`, `team_L`, `team_T`, `team_PF`, `team_PFG`, `team_PA`, `team_PAG`)
+#'   - Per-team cumulative statistics (`team_GP`, `team_W`, `team_L`, `team_T`,
+#'     `team_PF`, `team_PFG`, `team_PA`, `team_PAG`)
 #'   - `winner` flag (TRUE if the team won, FALSE if lost, NA if tie or missing)
 #'   - `locationID` (1 or 2, indicating home vs. away after reshaping)
 #'

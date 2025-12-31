@@ -13,7 +13,18 @@ box::use(
     navset_card_pill
   ],
   reactable[reactable, renderReactable, reactableOutput],
-  shiny[NS, bootstrapPage, div, moduleServer, p, br, renderUI, tags, uiOutput],
+  shiny[
+    NS,
+    bootstrapPage,
+    div,
+    moduleServer,
+    p,
+    br,
+    renderUI,
+    tags,
+    uiOutput,
+    reactive
+  ],
   thematic[thematic_shiny],
 )
 
@@ -84,7 +95,7 @@ ui <- function(id) {
   )
 }
 
-thematic_shiny()
+#thematic_shiny()
 
 #' @export
 server <- function(id) {
@@ -108,6 +119,9 @@ server <- function(id) {
 
     standings2$server("standings2")
 
-    predictions$server("predictions_games")
+    predictions$server(
+      "predictions_games",
+      dark_mode = reactive(input$dark_mode)
+    )
   })
 }

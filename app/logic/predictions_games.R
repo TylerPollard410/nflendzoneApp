@@ -1,4 +1,5 @@
 box::use(
+  cli[cli_warn],
   colorspace[lighten],
   dplyr[
     filter,
@@ -9,12 +10,54 @@ box::use(
     left_join,
     relocate,
     row_number,
-    pull,
     n,
     distinct
   ],
+  ggnewscale[new_scale_fill],
+  ggplot2[
+    ggplot,
+    aes,
+    geom_text,
+    geom_hline,
+    geom_label,
+    geom_vline,
+    geom_histogram,
+    labs,
+    scale_fill_manual,
+    scale_fill_viridis_c,
+    stat_bin_hex,
+    theme,
+    theme_minimal,
+    after_stat,
+    element_blank,
+    element_line,
+    element_rect,
+    element_text,
+    rel
+  ],
+  ggside[
+    geom_xsidehistogram,
+    geom_ysidehistogram,
+    geom_xsidetext,
+    geom_ysidetext,
+    theme_ggside_void
+  ],
+  grid[unit],
+  plotly[
+    ggplotly,
+    subplot,
+    plotly_empty,
+    layout
+  ],
+  thematic[
+    thematic_get_option,
+    thematic_get_mixture,
+    thematic_theme,
+    thematic_with_theme
+  ],
   tidyr[pivot_wider],
   posterior[
+    Pr,
     rvar_rng,
     ndraws
   ],
@@ -22,58 +65,65 @@ box::use(
     unnest_rvars,
     spread_rvars
   ],
-  stats[rnorm, rnbinom, setNames, quantile]
+  tibble[tibble],
+  scales[percent, breaks_pretty, label_number],
+  rlang[.data],
+  stats[rnorm, rnbinom, setNames]
 )
 
-box::use(
-  app /
-    logic /
-    data_startup[
-      teams_data,
-      teams,
-      game_data,
-      current_season,
-      current_week,
-      team_strength_negbinom_summary
-    ],
-  app / logic / data_import_functions,
-)
-
-filter_season <- unique(team_strength_negbinom_summary$filtered_season)
-filter_week <- unique(team_strength_negbinom_summary$filtered_week)
-predict_season <- unique(team_strength_negbinom_summary$predicted_season)
-predict_week <- unique(team_strength_negbinom_summary$predicted_week)
-
-game_data_predict <- game_data |>
-  filter(
-    season == predict_season,
-    week == predict_week
+#' @export
+make_team_palettes <- function(teams_data, light_amount = 0.25) {
+  team_colors <- setNames(teams_data$team_color, teams_data$team_abbr)
+  team_colors_light <- lighten(team_colors, amount = light_amount)
+  list(
+    team_colors = team_colors,
+    team_colors_light = team_colors_light,
+    result_fill_values = c(team_colors_light, Push = "grey70"),
+    total_fill_values = c(
+      Under = "steelblue3",
+      Over = "orange2",
+      Push = "grey70"
+    )
   )
+}
 
 #' @export
-game_select_choices <- game_data_predict$game_id
+get_prediction_context <- function(team_strength_negbinom_summary) {
+  pick_one <- function(x, name) {
+    x <- unique(x)
+    x <- x[!is.na(x)]
+    if (length(x) == 0L) {
+      cli_warn("No value found for {.val {name}}; predictions may be empty.")
+      return(NA_integer_)
+    }
+    if (length(x) > 1L) {
+      cli_warn(
+        "Multiple values found for {.val {name}}; using max(): {.val {x}}."
+      )
+      return(max(x))
+    }
+    x[[1]]
+  }
 
-#' @export
-spread_line_slider_init <- game_data_predict |>
-  filter(game_id == game_select_choices[1]) |>
-  pull(spread_line)
-
-#' @export
-total_line_slider_init <- game_data_predict |>
-  filter(game_id == game_select_choices[1]) |>
-  pull(total_line)
-
-#' @export
-team_colors <- setNames(teams_data$team_color, teams_data$team_abbr)
-
-#' @export
-team_colors_light <- lighten(team_colors, amount = 0.25)
-
-#' @export
-result_fill_values <- c(team_colors_light, Push = "grey70")
-
-#' @export
-total_fill_values <- c(Under = "steelblue3", Over = "orange2", Push = "grey70")
+  list(
+    filter_season = pick_one(
+      team_strength_negbinom_summary$filtered_season,
+      "filtered_season"
+    ),
+    filter_week = pick_one(
+      team_strength_negbinom_summary$filtered_week,
+      "filtered_week"
+    ),
+    predict_season = pick_one(
+      team_strength_negbinom_summary$predicted_season,
+      "predicted_season"
+    ),
+    predict_week = pick_one(
+      team_strength_negbinom_summary$predicted_week,
+      "predicted_week"
+    )
+  )
+}
 
 #' @export
 prepare_schedule_indices <- function(game_data, teams) {
@@ -100,12 +150,8 @@ prepare_schedule_indices <- function(game_data, teams) {
 }
 
 #' @export
-get_team_strength_rvars <- function(nb_sum_data) {
-  filter_season <- unique(nb_sum_data$filtered_season)
-  filter_week <- unique(nb_sum_data$filtered_week)
-  predict_season <- unique(nb_sum_data$predicted_season)
-  predict_week <- unique(nb_sum_data$predicted_week)
-
+get_team_strength_rvars <- function(nb_sum_data, teams, ndraws = 4000) {
+  pred_context <- get_prediction_context(nb_sum_data)
   nb_sum_data |>
     ungroup() |>
     mutate(
@@ -114,7 +160,7 @@ get_team_strength_rvars <- function(nb_sum_data) {
         n = n(),
         mean = mean,
         sd = sd,
-        ndraws = 4000
+        ndraws = ndraws
       ),
       .after = variable
     ) |>
@@ -152,10 +198,10 @@ get_team_strength_rvars <- function(nb_sum_data) {
     relocate(team, .before = 1) |>
     mutate(
       team = teams[team],
-      filtered_season = filter_season,
-      filtered_week = filter_week,
-      predicted_season = predict_season,
-      predicted_week = predict_week,
+      filtered_season = pred_context$filter_season,
+      filtered_week = pred_context$filter_week,
+      predicted_season = pred_context$predict_season,
+      predicted_week = pred_context$predict_week,
       .before = 1
     )
 }
@@ -253,4 +299,514 @@ get_predicted_rvars <- function(pred_games, strength_rvars) {
       y_result = y_home - y_away,
       y_total = y_home + y_away
     )
+}
+
+#' @export
+compute_game_probabilities <- function(game_rvars, spread_line, total_line) {
+  game_row <- game_rvars |>
+    distinct(home_team, away_team, .keep_all = TRUE) |>
+    dplyr::slice_head(n = 1)
+
+  if (nrow(game_row) == 0L) {
+    return(NULL)
+  }
+
+  home_team <- game_row$home_team[[1]]
+  away_team <- game_row$away_team[[1]]
+
+  mu_result <- game_row$mu_result[[1]]
+  mu_total <- game_row$mu_total[[1]]
+  y_result <- game_row$y_result[[1]]
+  y_total <- game_row$y_total[[1]]
+
+  list(
+    home_team = home_team,
+    away_team = away_team,
+    mu = list(
+      p_home_over = Pr(mu_result > spread_line & mu_total > total_line),
+      p_home_under = Pr(mu_result > spread_line & mu_total < total_line),
+      p_away_over = Pr(mu_result < spread_line & mu_total > total_line),
+      p_away_under = Pr(mu_result < spread_line & mu_total < total_line),
+      p_home_cover = Pr(mu_result > spread_line),
+      p_away_cover = Pr(mu_result < spread_line),
+      p_over = Pr(mu_total > total_line),
+      p_under = Pr(mu_total < total_line)
+    ),
+    y = list(
+      p_home_over = Pr(y_result > spread_line & y_total > total_line),
+      p_home_under = Pr(y_result > spread_line & y_total < total_line),
+      p_away_over = Pr(y_result < spread_line & y_total > total_line),
+      p_away_under = Pr(y_result < spread_line & y_total < total_line),
+      p_home_cover = Pr(y_result > spread_line),
+      p_away_cover = Pr(y_result < spread_line),
+      p_over = Pr(y_total > total_line),
+      p_under = Pr(y_total < total_line)
+    )
+  )
+}
+
+#' @export
+make_game_labels <- function(home_team, away_team, probs_kind) {
+  quad_labels <- tibble(
+    x = c(Inf, Inf, -Inf, -Inf),
+    y = c(Inf, -Inf, Inf, -Inf),
+    hjust = c(1.1, 1.1, -0.1, -0.1),
+    vjust = c(1.1, -0.1, 1.1, -0.1),
+    label = c(
+      paste0(
+        home_team,
+        " cover\nOver\n",
+        percent(probs_kind$p_home_over, 0.1)
+      ),
+      paste0(
+        home_team,
+        " cover\nUnder\n",
+        percent(probs_kind$p_home_under, 0.1)
+      ),
+      paste0(
+        away_team,
+        " cover\nOver\n",
+        percent(probs_kind$p_away_over, 0.1)
+      ),
+      paste0(
+        away_team,
+        " cover\nUnder\n",
+        percent(probs_kind$p_away_under, 0.1)
+      )
+    )
+  )
+
+  xside_labels <- tibble(
+    x = c(-Inf, Inf),
+    y = Inf,
+    hjust = c(-0.1, 1.1),
+    label = c(
+      paste0(
+        away_team,
+        " cover\n",
+        percent(probs_kind$p_away_cover, 0.1)
+      ),
+      paste0(
+        home_team,
+        " cover\n",
+        percent(probs_kind$p_home_cover, 0.1)
+      )
+    )
+  )
+
+  yside_labels <- tibble(
+    y = c(-Inf, Inf),
+    x = Inf,
+    vjust = c(-0.1, 1.1),
+    label = c(
+      paste0("Under\n", percent(probs_kind$p_under, 0.1)),
+      paste0("Over\n", percent(probs_kind$p_over, 0.1))
+    )
+  )
+
+  list(
+    quad_labels = quad_labels,
+    xside_labels = xside_labels,
+    yside_labels = yside_labels
+  )
+}
+
+#' @export
+make_joint_plot_prep <- function(
+  game_draws,
+  probs,
+  kind,
+  spread_line,
+  total_line
+) {
+  kind <- match.arg(kind, c("mu", "y"))
+
+  home_team <- probs$home_team
+  away_team <- probs$away_team
+  probs_kind <- probs[[kind]]
+
+  if (kind == "mu") {
+    plot_draws <- game_draws |>
+      mutate(
+        pred_result = .data$mu_result,
+        pred_total = .data$mu_total
+      )
+  } else {
+    plot_draws <- game_draws |>
+      mutate(
+        pred_result = .data$y_result,
+        pred_total = .data$y_total
+      )
+  }
+
+  plot_draws <- plot_draws |>
+    mutate(
+      result_bin = dplyr::case_when(
+        pred_result > spread_line ~ home_team,
+        pred_result < spread_line ~ away_team,
+        TRUE ~ "Push"
+      ),
+      total_bin = dplyr::case_when(
+        pred_total > total_line ~ "Over",
+        pred_total < total_line ~ "Under",
+        TRUE ~ "Push"
+      )
+    )
+
+  labels <- make_game_labels(home_team, away_team, probs_kind)
+
+  c(
+    list(
+      plot_draws = plot_draws,
+      home_team = home_team,
+      away_team = away_team
+    ),
+    labels
+  )
+}
+
+#' @export
+build_joint_prob_plot <- function(
+  plot_prep,
+  kind,
+  palettes,
+  spread_line,
+  total_line
+  # base_size,
+  # label_text_size
+) {
+  kind <- match.arg(kind, c("mu", "y"))
+  hex_binwidth <- if (kind == "mu") c(1, 1) else c(2, 2)
+
+  thematic_with_theme(
+    thematic_theme(fg = "auto", bg = "auto", accent = "auto"),
+    {
+      # text_color <- as.character(thematic_get_option("fg"))[[1]]
+      # plot_bg <- as.character(thematic_get_option("bg"))[[1]]
+      # if (
+      #   is.null(text_color) ||
+      #     is.na(text_color) ||
+      #     identical(text_color, "auto")
+      # ) {
+      #   text_color <- "#212529"
+      # }
+      # if (is.null(plot_bg) || is.na(plot_bg) || identical(plot_bg, "auto")) {
+      #   plot_bg <- "#ffffff"
+      # }
+
+      # label_fill <- NULL #thematic_get_mixture(0.1, default = plot_bg)
+      # if (is.null(label_fill) || is.na(label_fill)) {
+      #   label_fill <- plot_bg
+      # }
+
+      # grid_color <- thematic_get_mixture(0.2, default = text_color)
+      # if (is.null(grid_color) || is.na(grid_color)) {
+      #   grid_color <- "#dee2e6"
+      # }
+
+      text_color <- thematic_get_option("fg")
+      plot_bg <- thematic_get_option("bg")
+      label_fill <- plot_bg
+      grid_color <- thematic_get_mixture(0.2, default = text_color)
+
+      plot_prep$plot_draws |>
+        ggplot(aes(pred_result, pred_total)) +
+        stat_bin_hex(binwidth = hex_binwidth) +
+        scale_fill_viridis_c(
+          breaks = breaks_pretty(6),
+          labels = label_number(),
+          name = "Count"
+        ) +
+        geom_vline(
+          xintercept = spread_line,
+          linetype = 2,
+          color = "red"
+        ) +
+        geom_hline(
+          yintercept = total_line,
+          linetype = 2,
+          color = "red"
+        ) +
+        geom_label(
+          data = plot_prep$quad_labels,
+          aes(x = x, y = y, label = label, hjust = hjust, vjust = vjust),
+          inherit.aes = FALSE,
+          #size = label_text_size,
+          fill = label_fill,
+          color = text_color,
+          alpha = 0.8,
+          linewidth = 0
+        ) +
+        new_scale_fill() +
+        geom_xsidehistogram(
+          aes(y = after_stat(count), fill = result_bin),
+          binwidth = 1,
+          boundary = spread_line,
+          alpha = 0.7
+        ) +
+        scale_fill_manual(values = palettes$result_fill_values) +
+        new_scale_fill() +
+        geom_ysidehistogram(
+          aes(x = after_stat(count), fill = total_bin),
+          binwidth = 1,
+          boundary = total_line,
+          alpha = 0.7
+        ) +
+        scale_fill_manual(values = palettes$total_fill_values) +
+        geom_xsidetext(
+          data = plot_prep$xside_labels,
+          aes(x = x, y = Inf, label = label, hjust = hjust),
+          inherit.aes = FALSE,
+          vjust = 1.1,
+          #size = label_text_size,
+          color = text_color
+        ) +
+        geom_ysidetext(
+          data = plot_prep$yside_labels,
+          aes(x = Inf, y = y, label = label, vjust = vjust),
+          inherit.aes = FALSE,
+          hjust = 1.1,
+          #size = label_text_size,
+          color = text_color
+        ) +
+        labs(x = "Result", y = "Total") +
+        #theme_minimal(base_size = base_size) +
+        theme_minimal() +
+        theme_ggside_void() +
+        theme(
+          plot.background = element_rect(fill = plot_bg, color = NA),
+          panel.background = element_rect(fill = plot_bg, color = NA),
+          text = element_text(color = text_color),
+          strip.text = element_text(color = text_color, size = rel(1.1)),
+          plot.title = element_text(color = text_color, size = rel(1.1)),
+          axis.title = element_text(
+            color = text_color,
+            size = rel(1.1),
+            face = "bold"
+          ),
+          axis.text = element_text(color = text_color, size = rel(1)),
+          panel.grid = element_line(color = grid_color),
+          ggside.axis.ticks.length = grid::unit(0, "points"),
+          ggside.axis.minor.ticks.length = grid::unit(0, "pt"),
+          ggside.panel.scale = 0.25,
+          ggside.axis.line = element_blank(),
+          #ggside.axis.ticks = element_blank(),
+          ggside.axis.text = element_blank(),
+          legend.position = "none"
+        )
+    }
+  )
+}
+
+#' @export
+build_joint_prob_plot_int <- function(
+  plot_prep,
+  kind,
+  palettes,
+  spread_line,
+  total_line
+  # base_size,
+  # label_text_size
+) {
+  kind <- match.arg(kind, c("mu", "y"))
+  hex_binwidth <- if (kind == "mu") c(1, 1) else c(2, 2)
+
+  thematic_with_theme(
+    thematic_theme(fg = "auto", bg = "auto", accent = "auto"),
+    {
+      # text_color <- as.character(thematic_get_option("fg"))[[1]]
+      # plot_bg <- as.character(thematic_get_option("bg"))[[1]]
+      # if (
+      #   is.null(text_color) ||
+      #     is.na(text_color) ||
+      #     identical(text_color, "auto")
+      # ) {
+      #   text_color <- "#212529"
+      # }
+      # if (is.null(plot_bg) || is.na(plot_bg) || identical(plot_bg, "auto")) {
+      #   plot_bg <- "#ffffff"
+      # }
+
+      # label_fill <- NULL #thematic_get_mixture(0.1, default = plot_bg)
+      # if (is.null(label_fill) || is.na(label_fill)) {
+      #   label_fill <- plot_bg
+      # }
+
+      # grid_color <- thematic_get_mixture(0.2, default = text_color)
+      # if (is.null(grid_color) || is.na(grid_color)) {
+      #   grid_color <- "#dee2e6"
+      # }
+      text_color <- thematic_get_option("fg")
+      plot_bg <- thematic_get_option("bg")
+      label_fill <- plot_bg
+      grid_color <- thematic_get_mixture(0.2, default = text_color)
+
+      # text_color <- text_color <- "#212529"
+      # plot_bg <- plot_bg <- "#ffffff"
+      # label_fill <- plot_bg
+      # grid_color <- grid_color <- "#dee2e6"
+
+      p1 <- plot_prep$plot_draws |>
+        ggplot(aes(pred_result, pred_total)) +
+        stat_bin_hex(binwidth = hex_binwidth) +
+        scale_fill_viridis_c(
+          breaks = breaks_pretty(6),
+          labels = label_number(),
+          name = "Count"
+        ) +
+        geom_vline(
+          xintercept = spread_line,
+          linetype = 2,
+          color = "red"
+        ) +
+        geom_hline(
+          yintercept = total_line,
+          linetype = 2,
+          color = "red"
+        ) +
+        geom_text(
+          data = plot_prep$quad_labels,
+          aes(x = x, y = y, label = label, hjust = hjust, vjust = vjust)
+          #inherit.aes = FALSE
+          #size = label_text_size,
+          #fill = label_fill,
+          #color = text_color
+          #alpha = 0.8,
+          #linewidth = 0
+        ) +
+        labs(x = "Result", y = "Total") +
+        #theme_minimal(base_size = base_size) +
+        theme_minimal() +
+        theme(
+          plot.background = element_rect(fill = plot_bg, color = NA),
+          panel.background = element_rect(fill = plot_bg, color = NA),
+          text = element_text(color = text_color),
+          strip.text = element_text(color = text_color, size = rel(1.1)),
+          plot.title = element_text(color = text_color, size = rel(1.1)),
+          axis.title = element_text(
+            color = text_color,
+            size = rel(1.1),
+            face = "bold"
+          ),
+          ggside.axis.ticks.length = grid::unit(0, "points"),
+          ggside.axis.minor.ticks.length = grid::unit(0, "pt"),
+          axis.text = element_text(color = text_color, size = rel(1)),
+          panel.grid = element_line(color = grid_color),
+          legend.position = "none"
+        )
+      pl1 <- ggplotly(p1, type = "scatter")
+
+      p2 <- plot_prep$plot_draws |>
+        ggplot(aes(pred_result, pred_total)) +
+        geom_histogram(
+          aes(
+            y = after_stat(count) / nrow(plot_prep$plot_draws),
+            fill = result_bin
+          ),
+          binwidth = 1,
+          boundary = spread_line,
+          alpha = 0.7
+        ) +
+        scale_fill_manual(values = palettes$result_fill_values) +
+        geom_text(
+          data = plot_prep$xside_labels,
+          aes(x = x, y = Inf, label = label, hjust = hjust),
+          #inherit.aes = FALSE,
+          vjust = 1.1
+          #size = label_text_size,
+          #color = text_color
+        ) +
+        labs(x = "Result", y = "Total") +
+        #theme_minimal(base_size = base_size) +
+        theme_minimal() +
+        theme(
+          plot.background = element_rect(fill = plot_bg, color = NA),
+          panel.background = element_rect(fill = plot_bg, color = NA),
+          text = element_text(color = text_color),
+          strip.text = element_text(color = text_color, size = rel(1.1)),
+          plot.title = element_text(color = text_color, size = rel(1.1)),
+          axis.title = element_text(
+            color = text_color,
+            size = rel(1.1),
+            face = "bold"
+          ),
+          axis.text = element_text(color = text_color, size = rel(1)),
+          panel.grid.major.x = element_line(color = grid_color),
+          panel.grid.major.y = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          axis.ticks.length = grid::unit(0, "points"),
+          axis.minor.ticks.length = grid::unit(0, "pt"),
+          axis.line = element_blank(),
+          #axis.ticks = element_blank(),
+          axis.text.y = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position = "none"
+        )
+      pl2 <- ggplotly(p2)
+
+      p3 <- plot_prep$plot_draws |>
+        ggplot(aes(pred_result, pred_total)) +
+        geom_histogram(
+          aes(
+            x = after_stat(count) / nrow(plot_prep$plot_draws),
+            fill = total_bin
+          ),
+          binwidth = 1,
+          boundary = total_line,
+          alpha = 0.7
+        ) +
+        scale_fill_manual(values = palettes$total_fill_values) +
+        geom_text(
+          data = plot_prep$yside_labels,
+          aes(x = Inf, y = y, label = label, vjust = vjust),
+          #inherit.aes = FALSE,
+          hjust = 1.1
+          #size = label_text_size,
+          #color = text_color
+        ) +
+        labs(x = "Result", y = "Total") +
+        #theme_minimal(base_size = base_size) +
+        theme_minimal() +
+        theme(
+          plot.background = element_rect(fill = plot_bg, color = NA),
+          panel.background = element_rect(fill = plot_bg, color = NA),
+          text = element_text(color = text_color),
+          strip.text = element_text(color = text_color, size = rel(1.1)),
+          plot.title = element_text(color = text_color, size = rel(1.1)),
+          axis.title = element_text(
+            color = text_color,
+            size = rel(1.1),
+            face = "bold"
+          ),
+          axis.text = element_text(color = text_color, size = rel(1)),
+          panel.grid.major.y = element_line(color = grid_color),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank(),
+          axis.ticks.length = grid::unit(0, "points"),
+          axis.minor.ticks.length = grid::unit(0, "pt"),
+          axis.line = element_blank(),
+          #axis.ticks = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.x = element_blank(),
+          legend.position = "none"
+        )
+      pl3 <- ggplotly(p3)
+
+      subplot(
+        pl2,
+        plotly_empty(),
+        pl1,
+        pl3,
+        nrows = 2,
+        heights = c(0.2, 0.8),
+        widths = c(0.8, 0.2),
+        margin = 0,
+        shareX = TRUE,
+        shareY = TRUE,
+        titleX = TRUE,
+        titleY = TRUE
+      ) |>
+        layout(showlegend = FALSE)
+    }
+  )
 }
