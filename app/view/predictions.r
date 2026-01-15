@@ -68,7 +68,7 @@ box::use(
   dplyr[filter, mutate, case_when, pull, distinct, slice_head],
   tibble[tibble],
   tidybayes[unnest_rvars],
-  scales[percent, label_number, breaks_pretty],
+  scales[percent, label_number, breaks_pretty, number],
   utils[modifyList],
   thematic[thematic_get_option],
 )
@@ -87,6 +87,7 @@ box::use(
       get_team_strength_rvars,
       get_predicted_rvars,
       compute_game_probabilities,
+      prob_to_american_odds,
       make_joint_plot_prep,
       build_joint_prob_plot,
       build_joint_prob_plot_int
@@ -108,23 +109,17 @@ ui <- function(id) {
           selected = NULL,
           width = "auto",
           selectize = FALSE
-          #size = 8
         )
       )
     ),
     card_body(
-      # div(
-      #   class = "predictions-layout",
       padding = "0.5rem",
       gap = "0.5rem",
       layout_sidebar(
         padding = 0,
         sidebar = sidebar(
           title = "Lines",
-          #width = 320,
-          # open = list(
-          #   mobile = "always-above"
-          # ),
+          width = 400,
           noUiSliderInput(
             inputId = ns("spread_line_slider"),
             label = "Spread line",
@@ -144,34 +139,34 @@ ui <- function(id) {
             format = wNumbFormat(decimals = 1),
             height = "10px"
           ),
-          sliderInput(
+          noUiSliderInput(
             inputId = ns("total_line_slider"),
             label = "Total line",
-            min = 0,
-            max = 100,
+            min = 24,
+            max = 66,
             value = 45,
-            step = 0.5
+            step = 0.5,
+            pips = list(
+              mode = "count",
+              values = 9,
+              density = 3,
+              format = wNumbFormat(decimals = 1),
+              stepped = TRUE
+            ),
+            update_on = "end",
+            color = "purple",
+            format = wNumbFormat(decimals = 1),
+            height = "10px"
           )
         ),
         card(
           class = "predictions-summary",
           card_header("Cover Probability Summary"),
-          reactableOutput(ns("prob_summary"))
+          reactableOutput(ns("prob_summary"), height = "100%")
         ),
         layout_column_wrap(
           width = 1 / 2,
           class = "predictions-plots",
-          card(
-            full_screen = TRUE,
-            card_header("Expected (μ)"),
-            card_body(
-              class = "predictions-plot",
-              plotOutput(
-                outputId = ns("joint_mu_prob_plot"),
-                height = "520px"
-              )
-            )
-          ),
           card(
             full_screen = TRUE,
             card_header("Simulated (y)"),
@@ -179,6 +174,17 @@ ui <- function(id) {
               class = "predictions-plot",
               plotOutput(
                 outputId = ns("joint_y_prob_plot"),
+                height = "520px"
+              )
+            )
+          ),
+          card(
+            full_screen = TRUE,
+            card_header("Expected (μ)"),
+            card_body(
+              class = "predictions-plot",
+              plotOutput(
+                outputId = ns("joint_mu_prob_plot"),
                 height = "520px"
               )
             )
@@ -256,7 +262,7 @@ server <- function(id, dark_mode = NULL) {
         week == pred_context$predict_week
       )
 
-    palettes <- make_team_palettes(teams_data)
+    palettes <- make_team_palettes(teams_data, light_amount = 0.1)
 
     observe({
       req(nrow(pred_games) > 0)
@@ -313,7 +319,6 @@ server <- function(id, dark_mode = NULL) {
     }) |>
       bindEvent(input$total_line_slider, ignoreInit = TRUE)
 
-    # --- Reset sliders + derived state when the game changes ----
     observe({
       req(input$game_select)
 
@@ -333,14 +338,20 @@ server <- function(id, dark_mode = NULL) {
         range = c(spread_line_adj - 13, spread_line_adj + 13),
         value = spread_line_adj
       )
-      updateSliderInput(
+      updateNoUiSliderInput(
         session = session,
         inputId = "total_line_slider",
-        min = max(0, total_line_adj - 14),
-        max = total_line_adj + 14,
-        value = total_line_adj,
-        step = 0.5
+        range = c(total_line_adj - 13, total_line_adj + 13),
+        value = total_line_adj
       )
+      # updateSliderInput(
+      #   session = session,
+      #   inputId = "total_line_slider",
+      #   min = max(0, total_line_adj - 14),
+      #   max = total_line_adj + 14,
+      #   value = total_line_adj,
+      #   step = 0.5
+      # )
 
       selected_game_pending <- input$game_select
       session$onFlushed(
@@ -415,15 +426,15 @@ server <- function(id, dark_mode = NULL) {
           game_draws = draws,
           probs = probs,
           kind = "mu",
-          spread_line = state$spread,
-          total_line = state$total
+          spread_line_comp = state$spread,
+          total_line_comp = state$total
         ),
         y = make_joint_plot_prep(
           game_draws = draws,
           probs = probs,
           kind = "y",
-          spread_line = state$spread,
-          total_line = state$total
+          spread_line_comp = state$spread,
+          total_line_comp = state$total
         )
       )
     }) |>
@@ -449,7 +460,7 @@ server <- function(id, dark_mode = NULL) {
       probs_mu <- probs$mu
       probs_y <- probs$y
 
-      tibble(
+      out <- tibble(
         metric = c(
           paste0(home_team, " cover"),
           paste0(away_team, " cover"),
@@ -460,20 +471,24 @@ server <- function(id, dark_mode = NULL) {
           paste0(away_team, " cover & Over"),
           paste0(away_team, " cover & Under")
         ),
-        probability = percent(
-          c(
-            probs_y$p_home_cover,
-            probs_y$p_away_cover,
-            probs_y$p_over,
-            probs_y$p_under,
-            probs_y$p_home_over,
-            probs_y$p_home_under,
-            probs_y$p_away_over,
-            probs_y$p_away_under
-          ),
-          accuracy = 0.1
-        )
+        probability = c(
+          probs_y$p_home_cover,
+          probs_y$p_away_cover,
+          probs_y$p_over,
+          probs_y$p_under,
+          probs_y$p_home_over,
+          probs_y$p_home_under,
+          probs_y$p_away_over,
+          probs_y$p_away_under
+        ),
+        odds = prob_to_american_odds(probability, digits = 0L)
       )
+
+      out |>
+        mutate(
+          probability = percent(probability, accuracy = 0.1),
+          odds = number(odds, style_positive = "plus")
+        )
     })
 
     output$prob_summary <- renderReactable({
@@ -501,7 +516,8 @@ server <- function(id, dark_mode = NULL) {
         ),
         columns = list(
           metric = colDef(name = "Metric"),
-          probability = colDef(name = "Probability")
+          probability = colDef(name = "Probability"),
+          odds = colDef(name = "Odds")
         )
       )
     })

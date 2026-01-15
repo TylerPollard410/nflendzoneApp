@@ -345,6 +345,34 @@ compute_game_probabilities <- function(game_rvars, spread_line, total_line) {
   )
 }
 
+#' Convert probability to American odds (implied / fair odds).
+#'
+#' @param p Numeric vector of probabilities in [0, 1]
+#' @param digits Integer; rounding for returned odds
+#' @return Integer vector (American odds); NA for invalid inputs
+#' @export
+prob_to_american_odds <- function(p, digits = 0L) {
+  p <- as.numeric(p)
+
+  out <- rep(NA_real_, length(p))
+  ok <- is.finite(p) & !is.na(p) & p >= 0 & p <= 1
+
+  # Extremes: certain or impossible
+  out[ok & p == 1] <- -Inf
+  out[ok & p == 0] <- Inf
+
+  # Standard cases
+  fav <- ok & p > 0 & p < 1 & p > 0.5
+  dog <- ok & p > 0 & p < 1 & p < 0.5
+  even <- ok & p == 0.5
+
+  out[fav] <- -100 * (p[fav] / (1 - p[fav]))
+  out[dog] <- 100 * ((1 - p[dog]) / p[dog])
+  out[even] <- 100
+
+  as.integer(round(out, digits = digits))
+}
+
 #' @export
 make_game_labels <- function(home_team, away_team, probs_kind) {
   quad_labels <- tibble(
@@ -416,8 +444,8 @@ make_joint_plot_prep <- function(
   game_draws,
   probs,
   kind,
-  spread_line,
-  total_line
+  spread_line_comp,
+  total_line_comp
 ) {
   kind <- match.arg(kind, c("mu", "y"))
 
@@ -442,13 +470,13 @@ make_joint_plot_prep <- function(
   plot_draws <- plot_draws |>
     mutate(
       result_bin = dplyr::case_when(
-        pred_result > spread_line ~ home_team,
-        pred_result < spread_line ~ away_team,
+        pred_result > spread_line_comp ~ home_team,
+        pred_result < spread_line_comp ~ away_team,
         TRUE ~ "Push"
       ),
       total_bin = dplyr::case_when(
-        pred_total > total_line ~ "Over",
-        pred_total < total_line ~ "Under",
+        pred_total > total_line_comp ~ "Over",
+        pred_total < total_line_comp ~ "Under",
         TRUE ~ "Push"
       )
     )
