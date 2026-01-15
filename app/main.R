@@ -59,7 +59,8 @@ ui <- function(id) {
       info = "#eec900"
     ),
     fillable_mobile = FALSE,
-    selected = "standings",
+    padding = 0,
+    selected = "games",
     navbar_options = navbar_options(
       bg = "purple",
     ),
@@ -78,9 +79,11 @@ ui <- function(id) {
     ),
     nav_menu(
       title = "Predictions",
+      value = "predictions",
       icon = bs_icon("three-dots"),
       nav_panel(
         "Games",
+        value = "games",
         icon = bs_icon("info-circle"),
         predictions$ui(ns("predictions_games"))
       )

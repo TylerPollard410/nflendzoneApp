@@ -29,9 +29,12 @@ box::use(
     card,
     card_header,
     card_body,
-    layout_column_wrap
+    layout_column_wrap,
+    layout_sidebar,
+    sidebar
   ],
-  reactable[reactable, renderReactable, reactableOutput],
+  shinyWidgets[noUiSliderInput, updateNoUiSliderInput, wNumbFormat],
+  reactable[reactable, renderReactable, reactableOutput, colDef],
   ggplot2[
     ggplot,
     aes,
@@ -96,30 +99,50 @@ ui <- function(id) {
     useBusyIndicators(),
     card_header(
       div(
-        style = "display:flex; align-items:center; justify-content:space-between; gap: 1rem;",
-        h3("Game Predictiions", style = "margin:0;"),
+        style = "display:flex; align-items:center; justify-content:space-between; gap: 0rem;",
+        h3("Game Predictions", style = "margin:0;"),
         selectInput(
           ns("game_select"),
           NULL,
           choices = character(0),
           selected = NULL,
           width = "auto",
-          selectize = TRUE
+          selectize = FALSE
+          #size = 8
         )
       )
     ),
     card_body(
-      div(
-        class = "predictions-layout",
-        layout_column_wrap(
-          width = 1 / 2,
-          sliderInput(
+      # div(
+      #   class = "predictions-layout",
+      padding = "0.5rem",
+      gap = "0.5rem",
+      layout_sidebar(
+        padding = 0,
+        sidebar = sidebar(
+          title = "Lines",
+          #width = 320,
+          # open = list(
+          #   mobile = "always-above"
+          # ),
+          noUiSliderInput(
             inputId = ns("spread_line_slider"),
             label = "Spread line",
             min = -21,
             max = 21,
             value = 0,
-            step = 0.5
+            step = 0.5,
+            pips = list(
+              mode = "count",
+              values = 9,
+              density = 3,
+              format = wNumbFormat(decimals = 1),
+              stepped = TRUE
+            ),
+            update_on = "end",
+            color = "purple",
+            format = wNumbFormat(decimals = 1),
+            height = "10px"
           ),
           sliderInput(
             inputId = ns("total_line_slider"),
@@ -130,12 +153,11 @@ ui <- function(id) {
             step = 0.5
           )
         ),
-        br(),
-        div(
+        card(
           class = "predictions-summary",
+          card_header("Cover Probability Summary"),
           reactableOutput(ns("prob_summary"))
         ),
-        br(),
         layout_column_wrap(
           width = 1 / 2,
           class = "predictions-plots",
@@ -161,6 +183,7 @@ ui <- function(id) {
               )
             )
           )
+          # )
         )
       )
     )
@@ -304,19 +327,17 @@ server <- function(id, dark_mode = NULL) {
 
       freezeReactiveValue(input, "spread_line_slider")
       freezeReactiveValue(input, "total_line_slider")
-      updateSliderInput(
+      updateNoUiSliderInput(
         session = session,
         inputId = "spread_line_slider",
-        min = spread_line_adj - 21,
-        max = spread_line_adj + 21,
-        value = spread_line_adj,
-        step = 0.5
+        range = c(spread_line_adj - 13, spread_line_adj + 13),
+        value = spread_line_adj
       )
       updateSliderInput(
         session = session,
         inputId = "total_line_slider",
-        min = max(0, total_line_adj - 21),
-        max = total_line_adj + 21,
+        min = max(0, total_line_adj - 14),
+        max = total_line_adj + 14,
         value = total_line_adj,
         step = 0.5
       )
@@ -461,7 +482,7 @@ server <- function(id, dark_mode = NULL) {
         sortable = FALSE,
         pagination = FALSE,
         compact = TRUE,
-        bordered = TRUE,
+        bordered = FALSE,
         highlight = TRUE,
         theme = reactable::reactableTheme(
           color = "var(--bs-emphasis-color, var(--bs-body-color))",
@@ -477,6 +498,10 @@ server <- function(id, dark_mode = NULL) {
           cellStyle = list(
             color = "var(--bs-emphasis-color, var(--bs-body-color))"
           )
+        ),
+        columns = list(
+          metric = colDef(name = "Metric"),
+          probability = colDef(name = "Probability")
         )
       )
     })

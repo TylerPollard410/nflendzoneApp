@@ -48,6 +48,7 @@ ui <- function(id) {
       )
     ),
     card_body(
+      padding = "0.5rem",
       navset_underline(
         id = ns("navset"),
         nav_panel(
@@ -78,7 +79,12 @@ ui <- function(id) {
             inline = TRUE,
             width = "auto"
           ),
-          gt_output(ns("standings_table"))
+          card(
+            card_body(
+              padding = "0.5rem",
+              gt_output(ns("standings_table"))
+            )
+          )
         ),
         nav_panel(
           title = "Playoffs",
