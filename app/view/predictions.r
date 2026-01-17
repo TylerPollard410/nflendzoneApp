@@ -23,12 +23,14 @@ box::use(
     debounce,
     req,
     br,
-    isolate
+    isolate,
+    HTML
   ],
   bslib[
     card,
     card_header,
     card_body,
+    card_title,
     layout_column_wrap,
     layout_sidebar,
     sidebar
@@ -94,20 +96,20 @@ box::use(
     ],
 )
 
+#' @export
 ui <- function(id) {
   ns <- NS(id)
   card(
-    useBusyIndicators(),
     card_header(
       div(
-        style = "display:flex; align-items:center; justify-content:space-between; gap: 0rem;",
+        style = "display:flex; align-items:center; justify-content:space-between; gap: 1rem;",
         h3("Game Predictions", style = "margin:0;"),
         selectInput(
           ns("game_select"),
           NULL,
           choices = character(0),
           selected = NULL,
-          width = "auto",
+          width = "200px", # Specified width helps alignment
           selectize = FALSE
         )
       )
@@ -116,9 +118,12 @@ ui <- function(id) {
       padding = "0.5rem",
       gap = "0.5rem",
       layout_sidebar(
+        # 3. Assign an ID to the layout itself so JS can find it
+        id = ns("lines_sidebar_layout"),
         padding = 0,
         sidebar = sidebar(
           title = "Lines",
+          id = ns("lines_sidebar"),
           width = 400,
           noUiSliderInput(
             inputId = ns("spread_line_slider"),
@@ -189,13 +194,13 @@ ui <- function(id) {
               )
             )
           )
-          # )
         )
       )
     )
   )
 }
 
+#' @export
 server <- function(id, dark_mode = NULL) {
   moduleServer(id, function(input, output, session) {
     # plot_base_size <- function(width_px) {

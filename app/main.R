@@ -1,16 +1,17 @@
 box::use(
   bsicons[bs_icon],
   bslib[
+    page_navbar,
+    navbar_options,
     bs_theme,
     input_dark_mode,
     nav_item,
     nav_menu,
     nav_panel,
     nav_spacer,
-    navbar_options,
-    navset_pill,
-    page_navbar,
-    navset_card_pill
+    navset_bar,
+    navset_card_pill,
+    navset_pill
   ],
   reactable[reactable, renderReactable, reactableOutput],
   shiny[
@@ -23,7 +24,8 @@ box::use(
     renderUI,
     tags,
     uiOutput,
-    reactive
+    reactive,
+    useBusyIndicators
   ],
   thematic[thematic_shiny],
 )
@@ -50,19 +52,26 @@ box::use(
 #' @export
 ui <- function(id) {
   ns <- NS(id)
+
   page_navbar(
     title = "NFL EndZone Anaytics",
     id = ns("navbar"),
+    fillable = TRUE,
     theme = bs_theme(
-      version = 5,
-      primary = "purple",
-      info = "#eec900"
+      version = 5
+      #"card-bg" = "red"
+      #primary = "purple",
+      #info = "#eec900"
+    ),
+    navbar_options = navbar_options(
+      position = "static-top"
+      #bg = "purple",
     ),
     fillable_mobile = FALSE,
     padding = 0,
-    selected = "games",
-    navbar_options = navbar_options(
-      bg = "purple",
+    selected = "standings",
+    header = list(
+      useBusyIndicators()
     ),
     nav_panel(
       title = "Home",

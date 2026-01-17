@@ -1,8 +1,5 @@
 linters:
   linters_with_defaults(
     defaults = box.linters::rhino_default_linters,
-    object_usage_linter = object_usage_linter(
-      interpretable_functions = c("box::use")
-    )
     line_length_linter = line_length_linter(100)
   )
