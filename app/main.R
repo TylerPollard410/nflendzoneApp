@@ -1,22 +1,23 @@
 box::use(
+  box[export],
   bsicons[bs_icon],
   bslib,
   sass[sass_file],
-  reactable[reactable, renderReactable, reactableOutput],
   shiny,
 )
 
 box::use(
-  app / logic / data_startup,
-  app / view / standings,
-  app / view / predictions,
+  app / view / pages / predictions[predictions_server, predictions_ui],
+)
+
+box::use(
+  app / view / pages / standings[standings_server, standings_ui],
 )
 
 # Keep app theming centralized here for now.
 app_theme <- bslib$bs_theme(version = 5) |>
   bslib$bs_add_rules(sass_file("app/styles/main.scss"))
 
-#' @export
 ui <- function(id) {
   ns <- shiny$NS(id)
 
@@ -43,7 +44,7 @@ ui <- function(id) {
       title = "Standings",
       value = "standings",
       icon = bs_icon("table"),
-      standings$ui(ns("standings"))
+      standings_ui(ns("standings"))
     ),
     bslib$nav_menu(
       title = "Predictions",
@@ -53,7 +54,7 @@ ui <- function(id) {
         "Games",
         value = "games",
         icon = bs_icon("info-circle"),
-        predictions$ui(ns("predictions_games"))
+        predictions_ui(ns("predictions_games"))
       )
     ),
     bslib$nav_spacer(),
@@ -66,17 +67,18 @@ ui <- function(id) {
   )
 }
 
-#' @export
 server <- function(id) {
   shiny$moduleServer(id, function(input, output, session) {
-    standings$server(
+    standings_server(
       "standings",
       dark_mode = shiny$reactive(input$dark_mode)
     )
 
-    predictions$server(
+    predictions_server(
       "predictions_games",
       dark_mode = shiny$reactive(input$dark_mode)
     )
   })
 }
+
+export(ui, server)

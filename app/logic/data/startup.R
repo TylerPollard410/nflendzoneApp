@@ -1,46 +1,32 @@
 box::use(
+  box[export],
   dplyr[distinct],
-  nflreadr[load_teams, get_current_season, get_current_week, load_from_url],
+  nflreadr[get_current_season, get_current_week, load_from_url, load_teams],
 )
 
 box::use(
-  app /
-    logic /
-    data_import_functions[
-      load_game_data,
-      load_game_data_long,
-      pb_download_url_szn_wk
-    ],
+  app / logic / data / github_assets[pb_download_url_szn_wk],
+  app / logic / data / import[load_game_data, load_game_data_long],
 )
 
-#' @export
 current_season <- get_current_season()
 
-#' @export
 all_seasons <- 2006:current_season
 
-#' @export
 current_week <- get_current_week()
 
-#' @export
 teams_data <- load_teams(current = TRUE)
 
-#' @export
 teams <- teams_data$team_abbr
 
-#' @export
 game_data <- load_game_data(seasons = all_seasons)
 
-#' @export
 game_data_long <- load_game_data_long(game_df = game_data)
 
-#' @export
 season_weeks_df <- game_data |> distinct(season, week, week_seq)
 
-#' @export
 github_data_repo <- "TylerPollard410/nflendzoneData"
 
-#' @export
 base_repo_url <- paste0(
   "https://github.com/",
   github_data_repo,
@@ -51,21 +37,34 @@ load_release_asset <- function(path) {
   load_from_url(paste0(base_repo_url, path))
 }
 
-#' @export
 season_standings_data <- load_release_asset(
   "season_standings/season_standings.rds"
 )
 
-#' @export
 team_features_data <- load_release_asset("team_features/team_features.rds")
 
-#' @export
 team_strength_negbinom_summary <- load_from_url(
   pb_download_url_szn_wk(
     "team_strength_negbinom_summary",
     repo = github_data_repo,
     seasons = current_season,
     weeks = TRUE,
-    file_ext = "rds"
+    asset_ext = "rds"
   )
+)
+
+export(
+  current_season,
+  all_seasons,
+  current_week,
+  teams_data,
+  teams,
+  game_data,
+  game_data_long,
+  season_weeks_df,
+  github_data_repo,
+  base_repo_url,
+  season_standings_data,
+  team_features_data,
+  team_strength_negbinom_summary
 )

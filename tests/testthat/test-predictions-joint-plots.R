@@ -1,11 +1,16 @@
 box::use(
   ggplot2[ggplot_build],
-  tibble[tibble],
   testthat[expect_s3_class, test_that],
+  tibble[tibble],
 )
 
 box::use(
-  app / logic / predictions_games[build_joint_prob_plot, make_joint_plot_prep],
+  app /
+    logic /
+    predictions /
+    games /
+    plot_prep[make_joint_plot_prep],
+  app / logic / predictions / games / plots[build_joint_prob_plot],
 )
 
 test_that("joint result/total plot builds", {
@@ -43,7 +48,11 @@ test_that("joint result/total plot builds", {
 
   palettes <- list(
     result_fill_values = c(HOM = "grey80", AWY = "grey60", Push = "grey90"),
-    total_fill_values = c(Under = "steelblue3", Over = "orange2", Push = "grey90")
+    total_fill_values = c(
+      Under = "steelblue3",
+      Over = "orange2",
+      Push = "grey90"
+    )
   )
 
   spread_line <- 3
@@ -93,4 +102,3 @@ test_that("joint result/total plot builds", {
     "ggplot"
   )
 })
-
