@@ -9,22 +9,37 @@ box::use(
     clean_homeaway
   ],
   piggyback[pb_download_url],
-  rlang[arg_match, abort],
+  rlang[abort],
   stringr[str_extract, str_detect, regex, str_replace_all],
-  tools[file_ext, file_path_sans_ext],
-  utils[head]
 )
+
+american_odds_to_prob <- function(odds) {
+  odds <- as.numeric(odds)
+
+  out <- rep(NA_real_, length(odds))
+  out[odds == -Inf] <- 1
+  out[odds == Inf] <- 0
+
+  ok <- is.finite(odds) & !is.na(odds)
+  fav <- ok & odds < 0
+  dog <- ok & odds > 0
+  even <- ok & odds == 0
+
+  out[fav] <- abs(odds[fav]) / (abs(odds[fav]) + 100)
+  out[dog] <- 100 / (odds[dog] + 100)
+  out[even] <- 0.5
+
+  out
+}
 
 #' @param df A data frame with `season` and `week` columns
 #' @export
 add_week_seq <- function(df) {
-  # 1) Extract distinct season/week combinations, sorted
   weeks_tbl <- df |>
     dplyr$distinct(season, week) |>
     dplyr$arrange(season, week) |>
     dplyr$mutate(week_seq = dplyr$row_number())
 
-  # 2) Join back onto the original data frame
   df |>
     dplyr$left_join(weeks_tbl, by = c("season", "week")) |>
     dplyr$relocate(week_seq, .after = week)
@@ -36,6 +51,19 @@ add_week_seq <- function(df) {
 load_game_data <- function(seasons = 2006:most_recent_season()) {
   seasons <- unique(as.integer(seasons))
   games <- load_schedules(seasons = seasons)
+  drop_cols <- c(
+    "old_game_id",
+    "gsis",
+    "nfl_detail_id",
+    "pfr",
+    "pff",
+    "espn",
+    "ftn",
+    "away_qb_id",
+    "home_qb_id",
+    "stadium_id"
+  )
+
   games |>
     dplyr$filter(season %in% seasons) |>
     dplyr$mutate(
@@ -44,36 +72,12 @@ load_game_data <- function(seasons = 2006:most_recent_season()) {
       # season type: REG vs POST
       season_type = ifelse(game_type == "REG", "REG", "POST"),
       # betting probabilities from American odds
-      home_spread_prob = ifelse(
-        home_spread_odds < 0,
-        abs(home_spread_odds) / (abs(home_spread_odds) + 100),
-        100 / (home_spread_odds + 100)
-      ),
-      away_spread_prob = ifelse(
-        away_spread_odds < 0,
-        abs(away_spread_odds) / (abs(away_spread_odds) + 100),
-        100 / (away_spread_odds + 100)
-      ),
-      under_prob = ifelse(
-        under_odds < 0,
-        abs(under_odds) / (abs(under_odds) + 100),
-        100 / (under_odds + 100)
-      ),
-      over_prob = ifelse(
-        over_odds < 0,
-        abs(over_odds) / (abs(over_odds) + 100),
-        100 / (over_odds + 100)
-      ),
-      home_moneyline_prob = ifelse(
-        home_moneyline < 0,
-        abs(home_moneyline) / (abs(home_moneyline) + 100),
-        100 / (home_moneyline + 100)
-      ),
-      away_moneyline_prob = ifelse(
-        away_moneyline < 0,
-        abs(away_moneyline) / (abs(away_moneyline) + 100),
-        100 / (away_moneyline + 100)
-      ),
+      home_spread_prob = american_odds_to_prob(home_spread_odds),
+      away_spread_prob = american_odds_to_prob(away_spread_odds),
+      under_prob = american_odds_to_prob(under_odds),
+      over_prob = american_odds_to_prob(over_odds),
+      home_moneyline_prob = american_odds_to_prob(home_moneyline),
+      away_moneyline_prob = american_odds_to_prob(away_moneyline),
       # cover flags and winner
       spreadCover = dplyr$case_when(
         result > spread_line ~ TRUE,
@@ -112,18 +116,7 @@ load_game_data <- function(seasons = 2006:most_recent_season()) {
     dplyr$relocate(winner, .after = result) |>
     dplyr$relocate(time_of_day, .after = gametime) |>
     add_week_seq() |>
-    dplyr$select(
-      -old_game_id,
-      -gsis,
-      -nfl_detail_id,
-      -pfr,
-      -pff,
-      -espn,
-      -ftn,
-      -away_qb_id,
-      -home_qb_id,
-      -stadium_id
-    )
+    dplyr$select(-dplyr$any_of(drop_cols))
 }
 
 #' Compute Long-Format Team-Game Data from Game Schedule
@@ -162,18 +155,18 @@ load_game_data_long <- function(game_df) {
         TRUE,
         ifelse(opponent == winner, FALSE, NA)
       ),
-      team_W = cumsum(result > 0),
-      team_L = cumsum(result < 0),
+      team_W = cumsum(dplyr$coalesce(result > 0, FALSE)),
+      team_L = cumsum(dplyr$coalesce(result < 0, FALSE)),
       team_T = team_GP - team_W - team_L,
-      team_PF = cumsum(team_score),
+      team_PF = cumsum(dplyr$coalesce(team_score, 0)),
       team_PFG = team_PF / team_GP,
-      team_PA = cumsum(opponent_score),
+      team_PA = cumsum(dplyr$coalesce(opponent_score, 0)),
       team_PAG = team_PA / team_GP
     ) |>
     dplyr$mutate(
-      team_W = ifelse(is.na(dplyr$lag(team_W)), 0, dplyr$lag(team_W)),
-      team_L = ifelse(is.na(dplyr$lag(team_L)), 0, dplyr$lag(team_L)),
-      team_T = ifelse(is.na(dplyr$lag(team_T)), 0, dplyr$lag(team_T))
+      team_W = dplyr$lag(team_W, default = 0),
+      team_L = dplyr$lag(team_L, default = 0),
+      team_T = dplyr$lag(team_T, default = 0)
     ) |>
     dplyr$ungroup() |>
     dplyr$group_by(game_id) |>
@@ -193,8 +186,6 @@ pb_download_url_szn_wk <- function(
   file_ext = NULL,
   .token = gh_token()
 ) {
-  # surl_type <- arg_match(url_type, values = c("browser", "api"))
-
   normalize_ext <- function(x) {
     if (is.null(x)) {
       return(NULL)
@@ -247,15 +238,13 @@ pb_download_url_szn_wk <- function(
   all_files <- basename(all_urls)
 
   if (!is.null(file_ext)) {
-    keep_ext <- tolower(paste0(".", file_ext(all_files))) == file_ext
+    keep_ext <- tolower(paste0(".", tools::file_ext(all_files))) == file_ext
     all_urls <- all_urls[keep_ext]
     all_files <- all_files[keep_ext]
   }
 
-  stem <- file_path_sans_ext(all_files)
+  stem <- tools::file_path_sans_ext(all_files)
 
-  # Accept either "tag" prefix (what pb returns) or "tag/tag" (your theoretical layout)
-  # i.e. match: tag, tag_2025, tag_2025_17  OR  tag/tag, tag/tag_2025, tag/tag_2025_17
   prefix_rx <- paste0(
     "^(?:",
     str_replace_all(tag, "([\\W])", "\\\\\\1"),

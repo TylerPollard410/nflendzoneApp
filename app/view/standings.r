@@ -1,50 +1,10 @@
 box::use(
-  bslib[
-    navset_card_pill,
-    navset_pill,
-    navset_underline,
-    nav_panel,
-    card,
-    card_header,
-    card_body,
-    layout_columns
-  ],
-  dplyr[filter, mutate, select, arrange, left_join, transmute, any_of],
-  nflseedR[
-    nfl_standings,
-    compute_division_ranks,
-    compute_conference_seeds
-  ],
-  reactable[
-    reactable,
-    reactableTheme,
-    renderReactable,
-    reactableOutput,
-    colGroup,
-    colDef,
-    colFormat
-  ],
-  reactablefmtr[
-    group_border_sort,
-    group_merge_sort,
-    color_scales,
-    embed_img
-  ],
-  shiny[
-    p,
-    NS,
-    moduleServer,
-    h3,
-    tagList,
-    selectInput,
-    div,
-    br,
-    radioButtons,
-    reactive,
-    req,
-    uiOutput,
-    renderUI
-  ],
+  bslib,
+  dplyr,
+  nflseedR[nfl_standings, compute_division_ranks, compute_conference_seeds],
+  reactable,
+  reactablefmtr,
+  shiny,
 )
 
 box::use(
@@ -55,13 +15,13 @@ box::use(
 
 #' @export
 ui <- function(id) {
-  ns <- NS(id)
-  card(
-    card_header(
-      div(
+  ns <- shiny$NS(id)
+  bslib$card(
+    bslib$card_header(
+      shiny$div(
         style = "display:flex; align-items:center; justify-content:space-between; gap: 0rem;",
-        h3("NFL Standings", style = "margin:0;"),
-        selectInput(
+        shiny$h3("NFL Standings", style = "margin:0;"),
+        shiny$selectInput(
           ns("season_select"),
           NULL,
           choices = rev(all_seasons),
@@ -71,15 +31,15 @@ ui <- function(id) {
         )
       )
     ),
-    card_body(
+    bslib$card_body(
       padding = "0.5rem",
-      navset_underline(
+      bslib$navset_underline(
         id = ns("navset"),
-        nav_panel(
+        bslib$nav_panel(
           title = "Standings",
           value = "standings",
-          br(),
-          radioButtons(
+          shiny$br(),
+          shiny$radioButtons(
             inputId = ns("standings_group_by"),
             label = "Group By:",
             choices = c(
@@ -91,7 +51,7 @@ ui <- function(id) {
             inline = TRUE,
             width = "auto"
           ),
-          radioButtons(
+          shiny$radioButtons(
             inputId = ns("standings_order_by"),
             label = "Order By:",
             choices = c(
@@ -103,13 +63,13 @@ ui <- function(id) {
             inline = TRUE,
             width = "auto"
           ),
-          uiOutput(ns("standings_tables_ui"))
+          shiny$uiOutput(ns("standings_tables_ui"))
         ),
-        nav_panel(
+        bslib$nav_panel(
           title = "Playoffs",
           value = "playoffs",
-          br(),
-          uiOutput(ns("playoffs_tables_ui"))
+          shiny$br(),
+          shiny$uiOutput(ns("playoffs_tables_ui"))
         )
       )
     )
@@ -118,8 +78,8 @@ ui <- function(id) {
 
 #' @export
 server <- function(id, dark_mode = NULL) {
-  moduleServer(id, function(input, output, session) {
-    is_dark_mode <- reactive({
+  shiny$moduleServer(id, function(input, output, session) {
+    is_dark_mode <- shiny$reactive({
       if (is.null(dark_mode)) {
         return(FALSE)
       }
@@ -137,7 +97,7 @@ server <- function(id, dark_mode = NULL) {
     })
 
     bs_reactable_theme <- function() {
-      reactableTheme(
+      reactable$reactableTheme(
         color = "var(--bs-emphasis-color, var(--bs-body-color))",
         backgroundColor = "var(--bs-body-bg, #ffffff)",
         borderColor = "var(--bs-border-color, #dee2e6)",
@@ -154,18 +114,18 @@ server <- function(id, dark_mode = NULL) {
       )
     }
 
-    standings_games <- reactive({
-      req(input$season_select)
+    standings_games <- shiny$reactive({
+      shiny$req(input$season_select)
       game_data |>
-        filter(
+        dplyr$filter(
           season == input$season_select,
           game_type == "REG",
           !is.na(result)
         )
     })
 
-    standings_data <- reactive({
-      req(standings_games())
+    standings_data <- shiny$reactive({
+      shiny$req(standings_games())
       ranks <- if (identical(input$standings_order_by, "draft_rank")) {
         "DRAFT"
       } else {
@@ -181,14 +141,14 @@ server <- function(id, dark_mode = NULL) {
         )
     })
 
-    standings_display <- reactive({
-      req(standings_data())
+    standings_display <- shiny$reactive({
+      shiny$req(standings_data())
       standings_data() |>
-        left_join(
-          teams_data |> select(team_abbr, team_name, team_logo_espn),
+        dplyr$left_join(
+          teams_data |> dplyr$select(team_abbr, team_name, team_logo_espn),
           by = c("team" = "team_abbr")
         ) |>
-        mutate(
+        dplyr$mutate(
           GP = games,
           W = wins,
           L = losses,
@@ -203,8 +163,8 @@ server <- function(id, dark_mode = NULL) {
         )
     })
 
-    standings_ranked <- reactive({
-      req(standings_display())
+    standings_ranked <- shiny$reactive({
+      shiny$req(standings_display())
       data <- standings_display()
 
       rank_col <- switch(
@@ -216,8 +176,8 @@ server <- function(id, dark_mode = NULL) {
       )
 
       data |>
-        mutate(Rank = data[[rank_col]]) |>
-        select(
+        dplyr$mutate(Rank = data[[rank_col]]) |>
+        dplyr$select(
           Conf,
           Division,
           team_logo_espn,
@@ -234,7 +194,7 @@ server <- function(id, dark_mode = NULL) {
         )
     })
 
-    rank_label <- reactive({
+    rank_label <- shiny$reactive({
       switch(
         input$standings_order_by,
         "div_rank" = "Div",
@@ -267,8 +227,8 @@ server <- function(id, dark_mode = NULL) {
         "PD"
       )
 
-      data <- data |> select(any_of(select_cols))
-      logo_cell <- embed_img(
+      data <- data |> dplyr$select(dplyr$any_of(select_cols))
+      logo_cell <- reactablefmtr$embed_img(
         data = data,
         height = 24,
         width = 24,
@@ -278,14 +238,14 @@ server <- function(id, dark_mode = NULL) {
       )
 
       cols <- list(
-        Conf = colDef(name = "Conf", minWidth = 60, sortable = FALSE),
-        Division = colDef(
+        Conf = reactable$colDef(name = "Conf", minWidth = 60, sortable = FALSE),
+        Division = reactable$colDef(
           name = "",
           minWidth = 95,
           sortable = FALSE,
-          style = if (group_by_division) group_merge_sort("Division") else NULL
+          style = if (group_by_division) reactablefmtr$group_merge_sort("Division") else NULL
         ),
-        team_logo_espn = colDef(
+        team_logo_espn = reactable$colDef(
           name = "Team",
           sticky = "left",
           minWidth = 160,
@@ -293,40 +253,40 @@ server <- function(id, dark_mode = NULL) {
           cell = logo_cell,
           style = list(borderRight = "1px solid var(--bs-border-color)")
         ),
-        Team = colDef(show = FALSE),
-        Rank = colDef(name = rank_label, align = "center", minWidth = 55, sortable = FALSE),
-        GP = colDef(
+        Team = reactable$colDef(show = FALSE),
+        Rank = reactable$colDef(name = rank_label, align = "center", minWidth = 55, sortable = FALSE),
+        GP = reactable$colDef(
           name = "GP",
           align = "center",
           minWidth = 45,
           sortable = FALSE,
           style = list(borderRight = "1px dashed var(--bs-border-color)")
         ),
-        W = colDef(name = "W", align = "center", minWidth = 35, sortable = FALSE),
-        L = colDef(name = "L", align = "center", minWidth = 35, sortable = FALSE),
-        T = colDef(
+        W = reactable$colDef(name = "W", align = "center", minWidth = 35, sortable = FALSE),
+        L = reactable$colDef(name = "L", align = "center", minWidth = 35, sortable = FALSE),
+        T = reactable$colDef(
           name = "T",
           align = "center",
           minWidth = 35,
           sortable = FALSE,
           style = list(borderRight = "1px solid var(--bs-border-color)")
         ),
-        `W-L%` = colDef(
+        `W-L%` = reactable$colDef(
           name = "W-L%",
           align = "center",
           minWidth = 60,
           sortable = FALSE,
-          format = colFormat(percent = TRUE, digits = 1),
+          format = reactable$colFormat(percent = TRUE, digits = 1),
           style = list(borderRight = "1px solid var(--bs-border-color)")
         ),
-        PF = colDef(name = "PF", align = "center", minWidth = 55, sortable = FALSE),
-        PA = colDef(name = "PA", align = "center", minWidth = 55, sortable = FALSE),
-        PD = colDef(
+        PF = reactable$colDef(name = "PF", align = "center", minWidth = 55, sortable = FALSE),
+        PA = reactable$colDef(name = "PA", align = "center", minWidth = 55, sortable = FALSE),
+        PD = reactable$colDef(
           name = "PD",
           align = "center",
           minWidth = 55,
           sortable = FALSE,
-          style = color_scales(
+          style = reactablefmtr$color_scales(
             data = data,
             colors = c(
               "#dc3545",
@@ -340,7 +300,7 @@ server <- function(id, dark_mode = NULL) {
         )
       )
 
-      reactable(
+      reactable$reactable(
         data,
         theme = bs_reactable_theme(),
         compact = TRUE,
@@ -353,7 +313,7 @@ server <- function(id, dark_mode = NULL) {
         outlined = FALSE,
         bordered = FALSE,
         rowStyle = if (group_by_division && "Division" %in% names(data)) {
-          group_border_sort(
+          reactablefmtr$group_border_sort(
             columns = "Division",
             border_color = "var(--bs-border-color)",
             border_width = "1.5px",
@@ -362,40 +322,40 @@ server <- function(id, dark_mode = NULL) {
         } else {
           NULL
         },
-        defaultColGroup = colGroup(headerStyle = list(border = "none")),
+        defaultColGroup = reactable$colGroup(headerStyle = list(border = "none")),
         columnGroups = list(
-          colGroup(name = "Record", columns = c("GP", "W", "L", "T", "W-L%")),
-          colGroup(name = "Points", columns = c("PF", "PA", "PD"))
+          reactable$colGroup(name = "Record", columns = c("GP", "W", "L", "T", "W-L%")),
+          reactable$colGroup(name = "Points", columns = c("PF", "PA", "PD"))
         ),
-        defaultColDef = colDef(vAlign = "center", headerStyle = list(borderTop = "none")),
+        defaultColDef = reactable$colDef(vAlign = "center", headerStyle = list(borderTop = "none")),
         columns = cols[names(cols) %in% names(data)]
       )
     }
 
-    output$standings_tables_ui <- renderUI({
+    output$standings_tables_ui <- shiny$renderUI({
       ns <- session$ns
       switch(
         input$standings_group_by,
-        "nfl" = card(card_header("NFL"), card_body(reactableOutput(ns("nfl_table")))),
-        layout_columns(
+        "nfl" = bslib$card(bslib$card_header("NFL"), bslib$card_body(reactable$reactableOutput(ns("nfl_table")))),
+        bslib$layout_columns(
           col_widths = c(6, 6),
           gap = "0.75rem",
-          card(
-            card_header(if (identical(input$standings_group_by, "div")) "AFC (Divisions)" else "AFC"),
-            card_body(reactableOutput(ns("afc_table")))
+          bslib$card(
+            bslib$card_header(if (identical(input$standings_group_by, "div")) "AFC (Divisions)" else "AFC"),
+            bslib$card_body(reactable$reactableOutput(ns("afc_table")))
           ),
-          card(
-            card_header(if (identical(input$standings_group_by, "div")) "NFC (Divisions)" else "NFC"),
-            card_body(reactableOutput(ns("nfc_table")))
+          bslib$card(
+            bslib$card_header(if (identical(input$standings_group_by, "div")) "NFC (Divisions)" else "NFC"),
+            bslib$card_body(reactable$reactableOutput(ns("nfc_table")))
           )
         )
       )
     })
 
-    output$nfl_table <- renderReactable({
-      req(standings_ranked())
+    output$nfl_table <- reactable$renderReactable({
+      shiny$req(standings_ranked())
       make_standings_table(
-        standings_ranked() |> arrange(Rank),
+        standings_ranked() |> dplyr$arrange(Rank),
         show_conf = TRUE,
         show_division = TRUE,
         group_by_division = FALSE,
@@ -403,11 +363,11 @@ server <- function(id, dark_mode = NULL) {
       )
     })
 
-    output$afc_table <- renderReactable({
-      req(standings_ranked())
+    output$afc_table <- reactable$renderReactable({
+      shiny$req(standings_ranked())
       by_div <- identical(input$standings_group_by, "div")
-      data <- standings_ranked() |> filter(Conf == "AFC")
-      data <- if (by_div) data |> arrange(Division, Rank) else data |> arrange(Rank)
+      data <- standings_ranked() |> dplyr$filter(Conf == "AFC")
+      data <- if (by_div) data |> dplyr$arrange(Division, Rank) else data |> dplyr$arrange(Rank)
       make_standings_table(
         data,
         show_conf = FALSE,
@@ -417,11 +377,11 @@ server <- function(id, dark_mode = NULL) {
       )
     })
 
-    output$nfc_table <- renderReactable({
-      req(standings_ranked())
+    output$nfc_table <- reactable$renderReactable({
+      shiny$req(standings_ranked())
       by_div <- identical(input$standings_group_by, "div")
-      data <- standings_ranked() |> filter(Conf == "NFC")
-      data <- if (by_div) data |> arrange(Division, Rank) else data |> arrange(Rank)
+      data <- standings_ranked() |> dplyr$filter(Conf == "NFC")
+      data <- if (by_div) data |> dplyr$arrange(Division, Rank) else data |> dplyr$arrange(Rank)
       make_standings_table(
         data,
         show_conf = FALSE,
@@ -431,10 +391,10 @@ server <- function(id, dark_mode = NULL) {
       )
     })
 
-    playoffs_data <- reactive({
-      req(standings_games())
+    playoffs_data <- shiny$reactive({
+      shiny$req(standings_games())
       games <- standings_games() |>
-        transmute(
+        dplyr$transmute(
           sim = season,
           game_type,
           week,
@@ -455,14 +415,14 @@ server <- function(id, dark_mode = NULL) {
       })
     })
 
-    playoffs_display <- reactive({
-      req(playoffs_data())
+    playoffs_display <- shiny$reactive({
+      shiny$req(playoffs_data())
       playoffs_data() |>
-        left_join(
-          teams_data |> select(team_abbr, team_name, team_logo_espn),
+        dplyr$left_join(
+          teams_data |> dplyr$select(team_abbr, team_name, team_logo_espn),
           by = c("team" = "team_abbr")
         ) |>
-        mutate(
+        dplyr$mutate(
           GP = games,
           W = wins,
           L = losses,
@@ -475,8 +435,8 @@ server <- function(id, dark_mode = NULL) {
           Conf = conf,
           Team = team_name
         ) |>
-        arrange(Conf, seed) |>
-        select(
+        dplyr$arrange(Conf, seed) |>
+        dplyr$select(
           Conf,
           seed,
           team_logo_espn,
@@ -494,7 +454,7 @@ server <- function(id, dark_mode = NULL) {
     })
 
     make_playoffs_table <- function(data) {
-      logo_cell <- embed_img(
+      logo_cell <- reactablefmtr$embed_img(
         data = data,
         height = 24,
         width = 24,
@@ -503,7 +463,7 @@ server <- function(id, dark_mode = NULL) {
         label_position = "right"
       )
 
-      reactable(
+      reactable$reactable(
         data,
         theme = bs_reactable_theme(),
         compact = TRUE,
@@ -515,56 +475,56 @@ server <- function(id, dark_mode = NULL) {
         wrap = FALSE,
         outlined = FALSE,
         bordered = FALSE,
-        defaultColDef = colDef(vAlign = "center"),
-        defaultColGroup = colGroup(headerStyle = list(border = "none")),
+        defaultColDef = reactable$colDef(vAlign = "center"),
+        defaultColGroup = reactable$colGroup(headerStyle = list(border = "none")),
         columnGroups = list(
-          colGroup(name = "Record", columns = c("GP", "W", "L", "T", "W-L%")),
-          colGroup(name = "Tiebreak", columns = c("DIV%", "CON%", "SOV", "SOS"))
+          reactable$colGroup(name = "Record", columns = c("GP", "W", "L", "T", "W-L%")),
+          reactable$colGroup(name = "Tiebreak", columns = c("DIV%", "CON%", "SOV", "SOS"))
         ),
         columns = list(
-          Conf = colDef(show = FALSE),
-          seed = colDef(name = "Seed", align = "center", minWidth = 55, sticky = "left"),
-          team_logo_espn = colDef(
+          Conf = reactable$colDef(show = FALSE),
+          seed = reactable$colDef(name = "Seed", align = "center", minWidth = 55, sticky = "left"),
+          team_logo_espn = reactable$colDef(
             name = "Team",
             sticky = "left",
             minWidth = 180,
             cell = logo_cell,
             style = list(borderRight = "1px solid var(--bs-border-color)")
           ),
-          Team = colDef(show = FALSE),
-          GP = colDef(name = "GP", align = "center", minWidth = 45),
-          W = colDef(name = "W", align = "center", minWidth = 35),
-          L = colDef(name = "L", align = "center", minWidth = 35),
-          T = colDef(name = "T", align = "center", minWidth = 35),
-          `W-L%` = colDef(format = colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 60),
-          `DIV%` = colDef(format = colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70),
-          `CON%` = colDef(format = colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70),
-          SOV = colDef(format = colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70),
-          SOS = colDef(format = colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70)
+          Team = reactable$colDef(show = FALSE),
+          GP = reactable$colDef(name = "GP", align = "center", minWidth = 45),
+          W = reactable$colDef(name = "W", align = "center", minWidth = 35),
+          L = reactable$colDef(name = "L", align = "center", minWidth = 35),
+          T = reactable$colDef(name = "T", align = "center", minWidth = 35),
+          `W-L%` = reactable$colDef(format = reactable$colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 60),
+          `DIV%` = reactable$colDef(format = reactable$colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70),
+          `CON%` = reactable$colDef(format = reactable$colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70),
+          SOV = reactable$colDef(format = reactable$colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70),
+          SOS = reactable$colDef(format = reactable$colFormat(percent = TRUE, digits = 1), align = "center", minWidth = 70)
         )
       )
     }
 
-    output$playoffs_tables_ui <- renderUI({
+    output$playoffs_tables_ui <- shiny$renderUI({
       ns <- session$ns
-      tagList(
-        layout_columns(
+      shiny$tagList(
+        bslib$layout_columns(
           col_widths = c(6, 6),
           gap = "0.75rem",
-          card(card_header("AFC Seeds"), card_body(reactableOutput(ns("playoffs_afc_table")))),
-          card(card_header("NFC Seeds"), card_body(reactableOutput(ns("playoffs_nfc_table"))))
+          bslib$card(bslib$card_header("AFC Seeds"), bslib$card_body(reactable$reactableOutput(ns("playoffs_afc_table")))),
+          bslib$card(bslib$card_header("NFC Seeds"), bslib$card_body(reactable$reactableOutput(ns("playoffs_nfc_table"))))
         )
       )
     })
 
-    output$playoffs_afc_table <- renderReactable({
-      req(playoffs_display())
-      make_playoffs_table(playoffs_display() |> filter(Conf == "AFC"))
+    output$playoffs_afc_table <- reactable$renderReactable({
+      shiny$req(playoffs_display())
+      make_playoffs_table(playoffs_display() |> dplyr$filter(Conf == "AFC"))
     })
 
-    output$playoffs_nfc_table <- renderReactable({
-      req(playoffs_display())
-      make_playoffs_table(playoffs_display() |> filter(Conf == "NFC"))
+    output$playoffs_nfc_table <- reactable$renderReactable({
+      shiny$req(playoffs_display())
+      make_playoffs_table(playoffs_display() |> dplyr$filter(Conf == "NFC"))
     })
   })
 }

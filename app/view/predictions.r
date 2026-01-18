@@ -1,112 +1,31 @@
 box::use(
-  shiny[
-    NS,
-    tagList,
-    moduleServer,
-    div,
-    tags,
-    h3,
-    p,
-    selectInput,
-    sliderInput,
-    plotOutput,
-    renderPlot,
-    useBusyIndicators,
-    observe,
-    bindEvent,
-    bindCache,
-    freezeReactiveValue,
-    updateSelectInput,
-    updateSliderInput,
-    reactive,
-    reactiveVal,
-    debounce,
-    req,
-    br,
-    isolate,
-    HTML
-  ],
-  bslib[
-    card,
-    card_header,
-    card_body,
-    card_title,
-    layout_column_wrap,
-    layout_sidebar,
-    sidebar
-  ],
+  bslib,
+  dplyr,
+  reactable,
+  scales[percent, number],
+  shiny,
   shinyWidgets[noUiSliderInput, updateNoUiSliderInput, wNumbFormat],
-  reactable[reactable, renderReactable, reactableOutput, colDef],
-  ggplot2[
-    ggplot,
-    aes,
-    geom_vline,
-    geom_hline,
-    geom_label,
-    labs,
-    rel,
-    theme,
-    element_rect,
-    element_blank,
-    element_line,
-    element_text,
-    scale_fill_manual,
-    scale_fill_viridis_c,
-    stat_bin_hex,
-    facet_wrap,
-    theme_minimal,
-    after_stat
-  ],
-  grid[unit],
-  ggside[
-    geom_xsidehistogram,
-    geom_ysidehistogram,
-    geom_xsidetext,
-    geom_ysidetext,
-    theme_ggside_void
-  ],
-  ggnewscale[new_scale_fill],
-  plotly[plot_ly, plotlyOutput, renderPlotly, layout],
-  dplyr[filter, mutate, case_when, pull, distinct, slice_head],
   tibble[tibble],
   tidybayes[unnest_rvars],
-  scales[percent, label_number, breaks_pretty, number],
   utils[modifyList],
-  thematic[thematic_get_option],
 )
 
 box::use(
   app /
     logic /
     data_startup[teams_data, teams, game_data, team_strength_negbinom_summary],
-  #app / logic / data_import_functions[],
-  app /
-    logic /
-    predictions_games[
-      make_team_palettes,
-      get_prediction_context,
-      prepare_schedule_indices,
-      get_team_strength_rvars,
-      get_predicted_rvars,
-      compute_game_probabilities,
-      prob_to_american_odds,
-      make_joint_plot_prep,
-      make_score_plot_prep,
-      build_joint_prob_plot,
-      build_score_prob_plot,
-      build_joint_prob_plot_int
-    ],
+  app / logic / predictions_games,
 )
 
 #' @export
 ui <- function(id) {
-  ns <- NS(id)
-  card(
-    card_header(
-      div(
+  ns <- shiny$NS(id)
+  bslib$card(
+    bslib$card_header(
+      shiny$div(
         style = "display:flex; align-items:center; justify-content:space-between; gap: 1rem;",
-        h3("Game Predictions", style = "margin:0;"),
-        selectInput(
+        shiny$h3("Game Predictions", style = "margin:0;"),
+        shiny$selectInput(
           ns("game_select"),
           NULL,
           choices = character(0),
@@ -116,14 +35,14 @@ ui <- function(id) {
         )
       )
     ),
-    card_body(
+    bslib$card_body(
       padding = "0.5rem",
       gap = "0.5rem",
-      layout_sidebar(
+      bslib$layout_sidebar(
         # 3. Assign an ID to the layout itself so JS can find it
         id = ns("lines_sidebar_layout"),
         padding = 0,
-        sidebar = sidebar(
+        sidebar = bslib$sidebar(
           title = "Lines",
           id = ns("lines_sidebar"),
           width = 400,
@@ -166,53 +85,53 @@ ui <- function(id) {
             height = "10px"
           )
         ),
-        card(
+        bslib$card(
           class = "predictions-summary",
-          card_header("Cover Probability Summary"),
-          reactableOutput(ns("prob_summary"), height = "100%")
+          bslib$card_header("Cover Probability Summary"),
+          reactable$reactableOutput(ns("prob_summary"), height = "100%")
         ),
-        layout_column_wrap(
+        bslib$layout_column_wrap(
           width = 1 / 2,
           class = "predictions-plots",
-          card(
+          bslib$card(
             full_screen = TRUE,
-            card_header("Simulated (y): Result/Total"),
-            card_body(
+            bslib$card_header("Simulated (y): Result/Total"),
+            bslib$card_body(
               class = "predictions-plot",
-              plotOutput(
+              shiny$plotOutput(
                 outputId = ns("joint_y_prob_plot"),
                 height = "520px"
               )
             )
           ),
-          card(
+          bslib$card(
             full_screen = TRUE,
-            card_header("Expected (μ): Result/Total"),
-            card_body(
+            bslib$card_header("Expected (μ): Result/Total"),
+            bslib$card_body(
               class = "predictions-plot",
-              plotOutput(
+              shiny$plotOutput(
                 outputId = ns("joint_mu_prob_plot"),
                 height = "520px"
               )
             )
           ),
-          card(
+          bslib$card(
             full_screen = TRUE,
-            card_header("Simulated (y): Home/Away"),
-            card_body(
+            bslib$card_header("Simulated (y): Home/Away"),
+            bslib$card_body(
               class = "predictions-plot",
-              plotOutput(
+              shiny$plotOutput(
                 outputId = ns("joint_score_y_prob_plot"),
                 height = "520px"
               )
             )
           ),
-          card(
+          bslib$card(
             full_screen = TRUE,
-            card_header("Expected (μ): Home/Away"),
-            card_body(
+            bslib$card_header("Expected (μ): Home/Away"),
+            bslib$card_body(
               class = "predictions-plot",
-              plotOutput(
+              shiny$plotOutput(
                 outputId = ns("joint_score_mu_prob_plot"),
                 height = "520px"
               )
@@ -226,7 +145,7 @@ ui <- function(id) {
 
 #' @export
 server <- function(id, dark_mode = NULL) {
-  moduleServer(id, function(input, output, session) {
+  shiny$moduleServer(id, function(input, output, session) {
     # plot_base_size <- function(width_px) {
     #   if (is.null(width_px) || is.na(width_px) || width_px <= 0) {
     #     width_px <- 900
@@ -237,7 +156,7 @@ server <- function(id, dark_mode = NULL) {
 
     # pt_to_mm <- function(pt) pt / 2.845276
 
-    # is_dark_mode <- reactive({
+    # is_dark_mode <- shiny$reactive({
     #   if (is.null(dark_mode)) {
     #     return(FALSE)
     #   }
@@ -254,7 +173,7 @@ server <- function(id, dark_mode = NULL) {
     #   FALSE
     # })
 
-    # plots_style <- reactive({
+    # plots_style <- shiny$reactive({
     #   list(
     #     dark = is_dark_mode()
     #     # width_mu = session$clientData[[paste0(
@@ -271,40 +190,48 @@ server <- function(id, dark_mode = NULL) {
     # }) |>
     #   # Coalesce dark-mode toggle + post-toggle width reflow to avoid
     #   # double-invalidating the plots.
-    #   debounce(600)
-    # filter_season <- reactiveVal(unique(
+    #   shiny$debounce(600)
+    # filter_season <- shiny$reactiveVal(unique(
     #   team_strength_negbinom_summary$filtered_season
     # ))
-    # filter_week <- reactiveVal(unique(
+    # filter_week <- shiny$reactiveVal(unique(
     #   team_strength_negbinom_summary$filtered_week
     # ))
-    # predict_season <- ureactiveVal(nique(
+    # predict_season <- shiny$reactiveVal(unique(
     #   team_strength_negbinom_summary$predicted_season
     # ))
-    # predict_week <- reactiveVal(unique(
+    # predict_week <- shiny$reactiveVal(unique(
     #   team_strength_negbinom_summary$predicted_week
     # ))
-    pred_context <- get_prediction_context(team_strength_negbinom_summary)
-    pred_games <- prepare_schedule_indices(game_data, teams) |>
-      filter(
+    pred_context <- predictions_games$get_prediction_context(
+      team_strength_negbinom_summary
+    )
+    pred_games <- predictions_games$prepare_schedule_indices(
+      game_data,
+      teams
+    ) |>
+      dplyr$filter(
         season == pred_context$predict_season,
         week == pred_context$predict_week
       )
 
-    palettes <- make_team_palettes(teams_data, light_amount = 0.1)
+    palettes <- predictions_games$make_team_palettes(
+      teams_data,
+      light_amount = 0.1
+    )
 
-    observe({
-      req(nrow(pred_games) > 0)
-      updateSelectInput(
+    shiny$observe({
+      shiny$req(nrow(pred_games) > 0)
+      shiny$updateSelectInput(
         session = session,
         inputId = "game_select",
         choices = pred_games$game_id,
         selected = pred_games$game_id[[1]]
       )
     }) |>
-      bindEvent(TRUE, once = TRUE)
+      shiny$bindEvent(TRUE, once = TRUE)
 
-    display_state <- reactiveVal(list(
+    display_state <- shiny$reactiveVal(list(
       game_id = NULL,
       spread = 0,
       total = 45
@@ -320,11 +247,11 @@ server <- function(id, dark_mode = NULL) {
       isTRUE(all.equal(as.numeric(x), as.numeric(y)))
     }
 
-    observe({
+    shiny$observe({
       state <- display_state()
-      req(!is.null(state$game_id))
-      req(identical(input$game_select, state$game_id))
-      req(!is.null(input$spread_line_slider))
+      shiny$req(!is.null(state$game_id))
+      shiny$req(identical(input$game_select, state$game_id))
+      shiny$req(!is.null(input$spread_line_slider))
 
       if (same_number(state$spread, input$spread_line_slider)) {
         return()
@@ -332,13 +259,13 @@ server <- function(id, dark_mode = NULL) {
 
       display_state(modifyList(state, list(spread = input$spread_line_slider)))
     }) |>
-      bindEvent(input$spread_line_slider, ignoreInit = TRUE)
+      shiny$bindEvent(input$spread_line_slider, ignoreInit = TRUE)
 
-    observe({
+    shiny$observe({
       state <- display_state()
-      req(!is.null(state$game_id))
-      req(identical(input$game_select, state$game_id))
-      req(!is.null(input$total_line_slider))
+      shiny$req(!is.null(state$game_id))
+      shiny$req(identical(input$game_select, state$game_id))
+      shiny$req(!is.null(input$total_line_slider))
 
       if (same_number(state$total, input$total_line_slider)) {
         return()
@@ -346,21 +273,21 @@ server <- function(id, dark_mode = NULL) {
 
       display_state(modifyList(state, list(total = input$total_line_slider)))
     }) |>
-      bindEvent(input$total_line_slider, ignoreInit = TRUE)
+      shiny$bindEvent(input$total_line_slider, ignoreInit = TRUE)
 
-    observe({
-      req(input$game_select)
+    shiny$observe({
+      shiny$req(input$game_select)
 
       game_row <- pred_games |>
-        filter(game_id == input$game_select) |>
-        slice_head(n = 1)
-      req(nrow(game_row) == 1)
+        dplyr$filter(game_id == input$game_select) |>
+        dplyr$slice_head(n = 1)
+      shiny$req(nrow(game_row) == 1)
 
       spread_line_adj <- game_row$spread_line[[1]]
       total_line_adj <- game_row$total_line[[1]]
 
-      freezeReactiveValue(input, "spread_line_slider")
-      freezeReactiveValue(input, "total_line_slider")
+      shiny$freezeReactiveValue(input, "spread_line_slider")
+      shiny$freezeReactiveValue(input, "total_line_slider")
       updateNoUiSliderInput(
         session = session,
         inputId = "spread_line_slider",
@@ -373,7 +300,7 @@ server <- function(id, dark_mode = NULL) {
         range = c(total_line_adj - 13, total_line_adj + 13),
         value = total_line_adj
       )
-      # updateSliderInput(
+      # shiny$updateSliderInput(
       #   session = session,
       #   inputId = "total_line_slider",
       #   min = max(0, total_line_adj - 14),
@@ -385,7 +312,9 @@ server <- function(id, dark_mode = NULL) {
       selected_game_pending <- input$game_select
       session$onFlushed(
         function() {
-          if (!identical(isolate(input$game_select), selected_game_pending)) {
+          if (
+            !identical(shiny$isolate(input$game_select), selected_game_pending)
+          ) {
             return()
           }
           display_state(list(
@@ -397,68 +326,71 @@ server <- function(id, dark_mode = NULL) {
         once = TRUE
       )
     }) |>
-      bindEvent(input$game_select, ignoreInit = FALSE)
+      shiny$bindEvent(input$game_select, ignoreInit = FALSE)
 
-    team_strength_rvars <- get_team_strength_rvars(
+    team_strength_rvars <- predictions_games$get_team_strength_rvars(
       team_strength_negbinom_summary,
       teams = teams
     )
-    predicted_rvars <- get_predicted_rvars(pred_games, team_strength_rvars)
+    predicted_rvars <- predictions_games$get_predicted_rvars(
+      pred_games,
+      team_strength_rvars
+    )
 
-    game_rvars <- reactive({
+    game_rvars <- shiny$reactive({
       state <- display_state()
-      req(!is.null(state$game_id))
+      shiny$req(!is.null(state$game_id))
       predicted_rvars |>
-        filter(game_id == state$game_id)
+        dplyr$filter(game_id == state$game_id)
     })
 
-    game_draws <- reactive({
+    game_draws <- shiny$reactive({
       state <- display_state()
-      req(!is.null(state$game_id))
+      shiny$req(!is.null(state$game_id))
       game_rvars() |>
         unnest_rvars()
     }) |>
-      bindCache(display_state()$game_id) |>
-      bindEvent(display_state()$game_id, ignoreInit = FALSE)
+      shiny$bindCache(display_state()$game_id) |>
+      shiny$bindEvent(display_state()$game_id, ignoreInit = FALSE)
 
-    game_probs <- reactive({
+    game_probs <- shiny$reactive({
       state <- display_state()
-      req(!is.null(state$game_id))
-      compute_game_probabilities(
+      shiny$req(!is.null(state$game_id))
+      predictions_games$compute_game_probabilities(
         game_rvars(),
         spread_line = state$spread,
         total_line = state$total
       )
     }) |>
-      bindCache(
+      shiny$bindCache(
         display_state()$game_id,
         display_state()$spread,
         display_state()$total
       ) |>
-      bindEvent(
+      shiny$bindEvent(
         display_state()$game_id,
         display_state()$spread,
         display_state()$total,
         ignoreInit = FALSE
       )
 
-    joint_plot_prep <- reactive({
+    joint_plot_prep <- shiny$reactive({
       state <- display_state()
-      req(!is.null(state$game_id))
+      shiny$req(!is.null(state$game_id))
 
       probs <- game_probs()
-      req(!is.null(probs))
+      shiny$req(!is.null(probs))
       draws <- game_draws()
 
       list(
-        mu = make_joint_plot_prep(
+        mu = predictions_games$make_joint_plot_prep(
           game_draws = draws,
           probs = probs,
           kind = "mu",
           spread_line_comp = state$spread,
           total_line_comp = state$total
         ),
-        y = make_joint_plot_prep(
+        y = predictions_games$make_joint_plot_prep(
           game_draws = draws,
           probs = probs,
           kind = "y",
@@ -467,35 +399,35 @@ server <- function(id, dark_mode = NULL) {
         )
       )
     }) |>
-      bindCache(
+      shiny$bindCache(
         display_state()$game_id,
         display_state()$spread,
         display_state()$total
       ) |>
-      bindEvent(
+      shiny$bindEvent(
         display_state()$game_id,
         display_state()$spread,
         display_state()$total,
         ignoreInit = FALSE
       )
 
-    score_plot_prep <- reactive({
+    score_plot_prep <- shiny$reactive({
       state <- display_state()
-      req(!is.null(state$game_id))
+      shiny$req(!is.null(state$game_id))
 
       probs <- game_probs()
-      req(!is.null(probs))
+      shiny$req(!is.null(probs))
       draws <- game_draws()
 
       list(
-        mu = make_score_plot_prep(
+        mu = predictions_games$make_score_plot_prep(
           game_draws = draws,
           probs = probs,
           kind = "mu",
           spread_line_comp = state$spread,
           total_line_comp = state$total
         ),
-        y = make_score_plot_prep(
+        y = predictions_games$make_score_plot_prep(
           game_draws = draws,
           probs = probs,
           kind = "y",
@@ -504,23 +436,23 @@ server <- function(id, dark_mode = NULL) {
         )
       )
     }) |>
-      bindCache(
+      shiny$bindCache(
         display_state()$game_id,
         display_state()$spread,
         display_state()$total
       ) |>
-      bindEvent(
+      shiny$bindEvent(
         display_state()$game_id,
         display_state()$spread,
         display_state()$total,
         ignoreInit = FALSE
       )
 
-    prob_summary <- reactive({
+    prob_summary <- shiny$reactive({
       state <- display_state()
-      req(!is.null(state$game_id))
+      shiny$req(!is.null(state$game_id))
       probs <- game_probs()
-      req(!is.null(probs))
+      shiny$req(!is.null(probs))
       home_team <- probs$home_team
       away_team <- probs$away_team
       probs_mu <- probs$mu
@@ -547,25 +479,25 @@ server <- function(id, dark_mode = NULL) {
           probs_y$p_away_over,
           probs_y$p_away_under
         ),
-        odds = prob_to_american_odds(probability, digits = 0L)
+        odds = predictions_games$prob_to_american_odds(probability, digits = 0L)
       )
 
       out |>
-        mutate(
+        dplyr$mutate(
           probability = percent(probability, accuracy = 0.1),
           odds = number(odds, style_positive = "plus")
         )
     })
 
-    output$prob_summary <- renderReactable({
-      reactable(
+    output$prob_summary <- reactable$renderReactable({
+      reactable$reactable(
         prob_summary(),
         sortable = FALSE,
         pagination = FALSE,
         compact = TRUE,
         bordered = FALSE,
         highlight = TRUE,
-        theme = reactable::reactableTheme(
+        theme = reactable$reactableTheme(
           color = "var(--bs-emphasis-color, var(--bs-body-color))",
           backgroundColor = "var(--bs-body-bg)",
           borderColor = "var(--bs-border-color)",
@@ -581,39 +513,39 @@ server <- function(id, dark_mode = NULL) {
           )
         ),
         columns = list(
-          metric = colDef(name = "Metric"),
-          probability = colDef(name = "Probability"),
-          odds = colDef(name = "Odds")
+          metric = reactable$colDef(name = "Metric"),
+          probability = reactable$colDef(name = "Probability"),
+          odds = reactable$colDef(name = "Odds")
         )
       )
     })
 
-    output$joint_mu_prob_plot <- renderPlot(
+    output$joint_mu_prob_plot <- shiny$renderPlot(
       {
-        # shiny::req(input$team_game)
-        # shiny::req(spread_line_rv(), total_line_rv())
+        # shiny$req(input$team_game)
+        # shiny$req(spread_line_rv(), total_line_rv())
 
         # game_id_sel <- input$team_game
 
         # game_rvars <- pred_rvars |>
-        #   filter(game_id == game_id_sel)
+        #   dplyr$filter(game_id == game_id_sel)
 
         # game_draws <- game_rvars |>
         #   tidybayes::unnest_rvars()
 
         state <- display_state()
-        #req(!is.null(state$game_id))
+        #shiny$req(!is.null(state$game_id))
 
         spread_line_use <- state$spread
         total_line_use <- state$total
 
         plot_prep <- joint_plot_prep()$mu
         #style <- plots_style()
-        #req(isTRUE(style$width_mu > 0), isTRUE(style$width_y > 0))
+        #shiny$req(isTRUE(style$width_mu > 0), isTRUE(style$width_y > 0))
         #base_size <- plot_base_size(style$width_mu)
-        #label_text_size <- pt_to_mm(base_size) * as.numeric(rel(0.95))
+        #label_text_size <- pt_to_mm(base_size) * as.numeric(ggplot2$rel(0.95))
 
-        build_joint_prob_plot(
+        predictions_games$build_joint_prob_plot(
           plot_prep = plot_prep,
           kind = "mu",
           palettes = palettes,
@@ -635,31 +567,31 @@ server <- function(id, dark_mode = NULL) {
     #     y = ~pred_total
     #   )
     # })
-    output$joint_y_prob_plot <- renderPlot(
+    output$joint_y_prob_plot <- shiny$renderPlot(
       {
-        # shiny::req(input$team_game)
-        # shiny::req(spread_line_rv(), total_line_rv())
+        # shiny$req(input$team_game)
+        # shiny$req(spread_line_rv(), total_line_rv())
 
         # game_id_sel <- input$team_game
 
         # game_rvars <- pred_rvars |>
-        #   filter(game_id == game_id_sel)
+        #   dplyr$filter(game_id == game_id_sel)
 
         # game_draws <- game_rvars |>
         #   tidybayes::unnest_rvars()
         state <- display_state()
-        req(!is.null(state$game_id))
+        shiny$req(!is.null(state$game_id))
 
         spread_line_use <- state$spread
         total_line_use <- state$total
 
         plot_prep <- joint_plot_prep()$y
         #style <- plots_style()
-        #req(isTRUE(style$width_mu > 0), isTRUE(style$width_y > 0))
+        #shiny$req(isTRUE(style$width_mu > 0), isTRUE(style$width_y > 0))
         #base_size <- plot_base_size(style$width_y)
-        #label_text_size <- pt_to_mm(base_size) * as.numeric(rel(0.95))
+        #label_text_size <- pt_to_mm(base_size) * as.numeric(ggplot2$rel(0.95))
 
-        build_joint_prob_plot(
+        predictions_games$build_joint_prob_plot(
           plot_prep = plot_prep,
           kind = "y",
           palettes = palettes,
@@ -672,7 +604,7 @@ server <- function(id, dark_mode = NULL) {
       bg = "transparent"
     )
 
-    output$joint_score_mu_prob_plot <- renderPlot(
+    output$joint_score_mu_prob_plot <- shiny$renderPlot(
       {
         state <- display_state()
 
@@ -681,7 +613,7 @@ server <- function(id, dark_mode = NULL) {
 
         plot_prep <- score_plot_prep()$mu
 
-        build_score_prob_plot(
+        predictions_games$build_score_prob_plot(
           plot_prep = plot_prep,
           kind = "mu",
           palettes = palettes,
@@ -692,17 +624,17 @@ server <- function(id, dark_mode = NULL) {
       bg = "transparent"
     )
 
-    output$joint_score_y_prob_plot <- renderPlot(
+    output$joint_score_y_prob_plot <- shiny$renderPlot(
       {
         state <- display_state()
-        req(!is.null(state$game_id))
+        shiny$req(!is.null(state$game_id))
 
         spread_line_use <- state$spread
         total_line_use <- state$total
 
         plot_prep <- score_plot_prep()$y
 
-        build_score_prob_plot(
+        predictions_games$build_score_prob_plot(
           plot_prep = plot_prep,
           kind = "y",
           palettes = palettes,

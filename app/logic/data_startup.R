@@ -1,5 +1,5 @@
 box::use(
-  dplyr[select, arrange, distinct],
+  dplyr[distinct],
   nflreadr[load_teams, get_current_season, get_current_week, load_from_url],
 )
 
@@ -14,10 +14,10 @@ box::use(
 )
 
 #' @export
-all_seasons <- 2006:get_current_season()
+current_season <- get_current_season()
 
 #' @export
-current_season <- get_current_season()
+all_seasons <- 2006:current_season
 
 #' @export
 current_week <- get_current_week()
@@ -47,17 +47,17 @@ base_repo_url <- paste0(
   "/releases/download/"
 )
 
-#' @export
-season_standings_data <- load_from_url(paste0(
-  base_repo_url,
-  "season_standings/season_standings.rds"
-))
+load_release_asset <- function(path) {
+  load_from_url(paste0(base_repo_url, path))
+}
 
 #' @export
-team_features_data <- load_from_url(paste0(
-  base_repo_url,
-  "team_features/team_features.rds"
-))
+season_standings_data <- load_release_asset(
+  "season_standings/season_standings.rds"
+)
+
+#' @export
+team_features_data <- load_release_asset("team_features/team_features.rds")
 
 #' @export
 team_strength_negbinom_summary <- load_from_url(
