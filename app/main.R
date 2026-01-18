@@ -4,6 +4,7 @@ box::use(
     page_navbar,
     navbar_options,
     bs_theme,
+    bs_add_rules,
     input_dark_mode,
     nav_item,
     nav_menu,
@@ -13,6 +14,7 @@ box::use(
     navset_card_pill,
     navset_pill
   ],
+  sass[sass_file],
   reactable[reactable, renderReactable, reactableOutput],
   shiny[
     NS,
@@ -45,9 +47,12 @@ box::use(
       team_strength_negbinom_summary
     ],
   app / view / standings,
-  app / view / standings2,
   app / view / predictions,
 )
+
+# Keep app theming centralized here for now.
+app_theme <- bs_theme(version = 5) |>
+  bs_add_rules(sass_file("app/styles/main.scss"))
 
 #' @export
 ui <- function(id) {
@@ -57,15 +62,9 @@ ui <- function(id) {
     title = "NFL EndZone Anaytics",
     id = ns("navbar"),
     fillable = TRUE,
-    theme = bs_theme(
-      version = 5
-      #"card-bg" = "red"
-      #primary = "purple",
-      #info = "#eec900"
-    ),
+    theme = app_theme,
     navbar_options = navbar_options(
       position = "static-top"
-      #bg = "purple",
     ),
     fillable_mobile = FALSE,
     padding = 0,
@@ -83,8 +82,7 @@ ui <- function(id) {
       title = "Standings",
       value = "standings",
       icon = bs_icon("table"),
-      #standings$mod_standings_ui(ns("standings"))
-      standings2$ui(ns("standings2"))
+      standings$ui(ns("standings"))
     ),
     nav_menu(
       title = "Predictions",
@@ -123,13 +121,10 @@ server <- function(id) {
         )
       )
     })
-    # standings$mod_standings_server(
-    #   "standings",
-    #   teams_data = teams_data,
-    #   season_standings_data = season_standings_data
-    # )
-
-    standings2$server("standings2")
+    standings$server(
+      "standings",
+      dark_mode = reactive(input$dark_mode)
+    )
 
     predictions$server(
       "predictions_games",

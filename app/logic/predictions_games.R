@@ -18,6 +18,7 @@ box::use(
     ggplot,
     aes,
     geom_text,
+    geom_abline,
     geom_hline,
     geom_label,
     geom_vline,
@@ -494,6 +495,93 @@ make_joint_plot_prep <- function(
 }
 
 #' @export
+make_score_plot_prep <- function(
+  game_draws,
+  probs,
+  kind,
+  spread_line_comp,
+  total_line_comp
+) {
+  kind <- match.arg(kind, c("mu", "y"))
+
+  home_team <- probs$home_team
+  away_team <- probs$away_team
+  probs_kind <- probs[[kind]]
+
+  if (kind == "mu") {
+    plot_draws <- game_draws |>
+      mutate(
+        pred_home = .data$mu_home,
+        pred_away = .data$mu_away,
+        pred_result = .data$mu_result,
+        pred_total = .data$mu_total
+      )
+  } else {
+    plot_draws <- game_draws |>
+      mutate(
+        pred_home = .data$y_home,
+        pred_away = .data$y_away,
+        pred_result = .data$y_result,
+        pred_total = .data$y_total
+      )
+  }
+
+  plot_draws <- plot_draws |>
+    mutate(
+      result_bin = dplyr::case_when(
+        pred_result > spread_line_comp ~ home_team,
+        pred_result < spread_line_comp ~ away_team,
+        TRUE ~ "Push"
+      ),
+      total_bin = dplyr::case_when(
+        pred_total > total_line_comp ~ "Over",
+        pred_total < total_line_comp ~ "Under",
+        TRUE ~ "Push"
+      )
+    )
+
+  base_labels <- make_game_labels(home_team, away_team, probs_kind)$quad_labels
+
+  clamp <- function(x, lim, margin = 0) {
+    if (any(!is.finite(lim)) || length(lim) != 2L) {
+      return(x)
+    }
+    lo <- lim[[1]] + margin
+    hi <- lim[[2]] - margin
+    pmin(pmax(x, lo), hi)
+  }
+
+  x_rng <- range(plot_draws$pred_home, na.rm = TRUE)
+  y_rng <- range(plot_draws$pred_away, na.rm = TRUE)
+  x_margin <- if (is.finite(diff(x_rng))) 0.06 * diff(x_rng) else 0
+  y_margin <- if (is.finite(diff(y_rng))) 0.06 * diff(y_rng) else 0
+
+  x0 <- (total_line_comp + spread_line_comp) / 2
+  y0 <- (total_line_comp - spread_line_comp) / 2
+  delta <- 0.15 * max(diff(x_rng), diff(y_rng), na.rm = TRUE)
+  if (!is.finite(delta) || delta <= 0) {
+    delta <- 1
+  }
+
+  region_labels <- tibble(
+    x = c(x0 + delta, x0, x0, x0 - delta),
+    y = c(y0, y0 - delta, y0 + delta, y0),
+    label = base_labels$label
+  ) |>
+    mutate(
+      x = clamp(.data$x, x_rng, x_margin),
+      y = clamp(.data$y, y_rng, y_margin)
+    )
+
+  list(
+    plot_draws = plot_draws,
+    home_team = home_team,
+    away_team = away_team,
+    region_labels = region_labels
+  )
+}
+
+#' @export
 build_joint_prob_plot <- function(
   plot_prep,
   kind,
@@ -619,6 +707,102 @@ build_joint_prob_plot <- function(
           ggside.panel.scale = 0.25,
           ggside.axis.line = element_blank(),
           #ggside.axis.ticks = element_blank(),
+          ggside.axis.text = element_blank(),
+          legend.position = "none"
+        )
+    }
+  )
+}
+
+#' @export
+build_score_prob_plot <- function(
+  plot_prep,
+  kind,
+  palettes,
+  spread_line,
+  total_line
+) {
+  kind <- match.arg(kind, c("mu", "y"))
+  hex_binwidth <- if (kind == "mu") c(1, 1) else c(2, 2)
+
+  home_fill <- palettes$team_colors_light[[plot_prep$home_team]]
+  away_fill <- palettes$team_colors_light[[plot_prep$away_team]]
+  if (is.null(home_fill) || is.na(home_fill)) {
+    home_fill <- "grey70"
+  }
+  if (is.null(away_fill) || is.na(away_fill)) {
+    away_fill <- "grey70"
+  }
+
+  thematic_with_theme(
+    thematic_theme(fg = "auto", bg = "auto", accent = "auto"),
+    {
+      text_color <- thematic_get_option("fg")
+      plot_bg <- thematic_get_option("bg")
+      label_fill <- plot_bg
+      grid_color <- thematic_get_mixture(0.2, default = text_color)
+
+      plot_prep$plot_draws |>
+        ggplot(aes(pred_home, pred_away)) +
+        stat_bin_hex(binwidth = hex_binwidth) +
+        scale_fill_viridis_c(
+          breaks = breaks_pretty(6),
+          labels = label_number(),
+          name = "Count"
+        ) +
+        geom_abline(
+          intercept = -spread_line,
+          slope = 1,
+          linetype = 2,
+          color = "red"
+        ) +
+        geom_abline(
+          intercept = total_line,
+          slope = -1,
+          linetype = 2,
+          color = "red"
+        ) +
+        geom_label(
+          data = plot_prep$region_labels,
+          aes(x = x, y = y, label = label),
+          inherit.aes = FALSE,
+          fill = label_fill,
+          color = text_color,
+          alpha = 0.85,
+          linewidth = 0
+        ) +
+        geom_xsidehistogram(
+          aes(y = after_stat(count)),
+          binwidth = 1,
+          alpha = 0.7,
+          fill = home_fill
+        ) +
+        geom_ysidehistogram(
+          aes(x = after_stat(count)),
+          binwidth = 1,
+          alpha = 0.7,
+          fill = away_fill
+        ) +
+        labs(x = "Home points", y = "Away points") +
+        theme_minimal() +
+        theme_ggside_void() +
+        theme(
+          plot.background = element_rect(fill = plot_bg, color = NA),
+          panel.background = element_rect(fill = plot_bg, color = NA),
+          text = element_text(color = text_color),
+          strip.text = element_text(color = text_color, size = rel(1.1)),
+          plot.title = element_text(color = text_color, size = rel(1.1)),
+          axis.title = element_text(
+            color = text_color,
+            size = rel(1.1),
+            face = "bold"
+          ),
+          axis.text = element_text(color = text_color, size = rel(1)),
+          panel.grid = element_line(color = grid_color),
+          ggside.axis.ticks.length = grid::unit(0, "points"),
+          ggside.axis.minor.ticks.length = grid::unit(0, "pt"),
+          ggside.panel.scale = 0.25,
+          ggside.axis.line = element_blank(),
           ggside.axis.text = element_blank(),
           legend.position = "none"
         )

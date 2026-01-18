@@ -91,7 +91,9 @@ box::use(
       compute_game_probabilities,
       prob_to_american_odds,
       make_joint_plot_prep,
+      make_score_plot_prep,
       build_joint_prob_plot,
+      build_score_prob_plot,
       build_joint_prob_plot_int
     ],
 )
@@ -174,7 +176,7 @@ ui <- function(id) {
           class = "predictions-plots",
           card(
             full_screen = TRUE,
-            card_header("Simulated (y)"),
+            card_header("Simulated (y): Result/Total"),
             card_body(
               class = "predictions-plot",
               plotOutput(
@@ -185,11 +187,33 @@ ui <- function(id) {
           ),
           card(
             full_screen = TRUE,
-            card_header("Expected (μ)"),
+            card_header("Expected (μ): Result/Total"),
             card_body(
               class = "predictions-plot",
               plotOutput(
                 outputId = ns("joint_mu_prob_plot"),
+                height = "520px"
+              )
+            )
+          ),
+          card(
+            full_screen = TRUE,
+            card_header("Simulated (y): Home/Away"),
+            card_body(
+              class = "predictions-plot",
+              plotOutput(
+                outputId = ns("joint_score_y_prob_plot"),
+                height = "520px"
+              )
+            )
+          ),
+          card(
+            full_screen = TRUE,
+            card_header("Expected (μ): Home/Away"),
+            card_body(
+              class = "predictions-plot",
+              plotOutput(
+                outputId = ns("joint_score_mu_prob_plot"),
                 height = "520px"
               )
             )
@@ -455,6 +479,43 @@ server <- function(id, dark_mode = NULL) {
         ignoreInit = FALSE
       )
 
+    score_plot_prep <- reactive({
+      state <- display_state()
+      req(!is.null(state$game_id))
+
+      probs <- game_probs()
+      req(!is.null(probs))
+      draws <- game_draws()
+
+      list(
+        mu = make_score_plot_prep(
+          game_draws = draws,
+          probs = probs,
+          kind = "mu",
+          spread_line_comp = state$spread,
+          total_line_comp = state$total
+        ),
+        y = make_score_plot_prep(
+          game_draws = draws,
+          probs = probs,
+          kind = "y",
+          spread_line_comp = state$spread,
+          total_line_comp = state$total
+        )
+      )
+    }) |>
+      bindCache(
+        display_state()$game_id,
+        display_state()$spread,
+        display_state()$total
+      ) |>
+      bindEvent(
+        display_state()$game_id,
+        display_state()$spread,
+        display_state()$total,
+        ignoreInit = FALSE
+      )
+
     prob_summary <- reactive({
       state <- display_state()
       req(!is.null(state$game_id))
@@ -606,6 +667,47 @@ server <- function(id, dark_mode = NULL) {
           total_line = total_line_use
           #base_size = base_size,
           #label_text_size = label_text_size
+        )
+      },
+      bg = "transparent"
+    )
+
+    output$joint_score_mu_prob_plot <- renderPlot(
+      {
+        state <- display_state()
+
+        spread_line_use <- state$spread
+        total_line_use <- state$total
+
+        plot_prep <- score_plot_prep()$mu
+
+        build_score_prob_plot(
+          plot_prep = plot_prep,
+          kind = "mu",
+          palettes = palettes,
+          spread_line = spread_line_use,
+          total_line = total_line_use
+        )
+      },
+      bg = "transparent"
+    )
+
+    output$joint_score_y_prob_plot <- renderPlot(
+      {
+        state <- display_state()
+        req(!is.null(state$game_id))
+
+        spread_line_use <- state$spread
+        total_line_use <- state$total
+
+        plot_prep <- score_plot_prep()$y
+
+        build_score_prob_plot(
+          plot_prep = plot_prep,
+          kind = "y",
+          palettes = palettes,
+          spread_line = spread_line_use,
+          total_line = total_line_use
         )
       },
       bg = "transparent"
