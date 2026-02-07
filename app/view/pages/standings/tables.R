@@ -124,10 +124,11 @@ make_standings_table <- function(
       style = reactablefmtr$color_scales(
         data = data,
         colors = c(
-          "#dc3545",
-          if (isTRUE(is_dark_mode)) "#343a40" else "whitesmoke",
-          "#198754"
+          "#ff0000ff",
+          "whitesmoke", #if (isTRUE(is_dark_mode)) "#343a40" else "whitesmoke",
+          "#00ff88ff"
         ),
+        # colors = c("red", "pink", "whitesmoke", "palegreen", "green"),
         bias = 1,
         brighten_text = FALSE,
         show_text = TRUE

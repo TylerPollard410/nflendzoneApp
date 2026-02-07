@@ -21,6 +21,7 @@ build_joint_prob_plot <- function(
   palettes,
   spread_line,
   total_line,
+  heatmap_shape = "hex",
   show_spread_line = TRUE,
   show_total_line = TRUE,
   show_prob_labels = TRUE
@@ -96,9 +97,26 @@ build_joint_prob_plot <- function(
         NULL
       }
 
+      coord_layer <- if (kind == "y") {
+        ggplot2$coord_cartesian(
+          xlim = c(
+            max(-50, plot_prep$res_rng[1]),
+            min(50, plot_prep$res_rng[2])
+          ),
+          ylim = c(plot_prep$tot_rng[1], min(100, plot_prep$tot_rng[2])),
+          ratio = 1
+        )
+      } else {
+        NULL
+      }
+
       plot_prep$plot_draws |>
         ggplot2$ggplot(ggplot2$aes(pred_result, pred_total)) +
-        ggplot2$stat_bin_hex(binwidth = hex_binwidth) +
+        (if (heatmap_shape == "hex") {
+          ggplot2$stat_bin_hex(binwidth = hex_binwidth)
+        } else {
+          ggplot2$stat_bin_2d(binwidth = hex_binwidth)
+        }) +
         ggplot2$scale_fill_viridis_c(
           breaks = breaks_pretty(6),
           labels = label_number(),
@@ -125,6 +143,7 @@ build_joint_prob_plot <- function(
         ggplot2$scale_fill_manual(values = palettes$total_fill_values) +
         xside_label_layer +
         yside_label_layer +
+        coord_layer +
         ggplot2$labs(x = "Result", y = "Total") +
         ggplot2$theme_minimal() +
         ggside$theme_ggside_void() +
@@ -168,12 +187,18 @@ build_score_prob_plot <- function(
   palettes,
   spread_line,
   total_line,
+  heatmap_shape = "hex",
   show_spread_line = TRUE,
   show_total_line = TRUE,
   show_prob_labels = TRUE
 ) {
   kind <- match.arg(kind, c("mu", "y"))
-  hex_binwidth <- if (kind == "mu") c(1, 1) else c(2, 2)
+  hex_binwidth <- c(1, 1) # if (kind == "mu") c(1, 1) else c(2, 2)
+  plot_lims_max <- ifelse(
+    kind == "y",
+    min(75, plot_prep$score_limits[2]),
+    plot_prep$score_limits[2]
+  )
 
   home_fill <- palettes$team_colors_light[[plot_prep$home_team]]
   away_fill <- palettes$team_colors_light[[plot_prep$away_team]]
@@ -230,7 +255,11 @@ build_score_prob_plot <- function(
 
       plot_prep$plot_draws |>
         ggplot2$ggplot(ggplot2$aes(pred_home, pred_away)) +
-        ggplot2$stat_bin_hex(binwidth = hex_binwidth) +
+        (if (heatmap_shape == "hex") {
+          ggplot2$stat_bin_hex(binwidth = hex_binwidth)
+        } else {
+          ggplot2$stat_bin_2d(binwidth = hex_binwidth)
+        }) +
         ggplot2$scale_fill_viridis_c(
           breaks = breaks_pretty(6),
           labels = label_number(),
@@ -252,9 +281,10 @@ build_score_prob_plot <- function(
           fill = away_fill
         ) +
         ggplot2$labs(x = "Home points", y = "Away points") +
-        ggplot2$coord_equal(
-          xlim = plot_prep$score_limits,
-          ylim = plot_prep$score_limits
+        ggplot2$coord_cartesian(
+          xlim = c(plot_prep$score_limits[1], plot_lims_max),
+          ylim = c(plot_prep$score_limits[1], plot_lims_max),
+          ratio = 1
         ) +
         ggplot2$theme_minimal() +
         ggside$theme_ggside_void() +
@@ -279,6 +309,7 @@ build_score_prob_plot <- function(
             color = text_color,
             size = ggplot2$rel(1)
           ),
+          aspect.ratio = 1,
           panel.grid = ggplot2$element_line(color = grid_color),
           ggside.axis.ticks.length = unit(0, "points"),
           ggside.axis.minor.ticks.length = unit(0, "pt"),
@@ -297,12 +328,19 @@ build_score_combo_plot <- function(
   palettes,
   spread_line,
   total_line,
+  heatmap_shape = "hex",
   show_spread_line = TRUE,
   show_total_line = TRUE,
   show_prob_labels = TRUE
 ) {
   kind <- match.arg(kind, c("mu", "y"))
-  hex_binwidth <- if (kind == "mu") c(1, 1) else c(2, 2)
+  hex_binwidth <- c(1, 1) # if (kind == "mu") c(1, 1) else c(2, 2)
+  hex_linewidth <- if (kind == "mu") 0.2 else 0.1
+  plot_lims_max <- ifelse(
+    kind == "y",
+    min(75, plot_prep$score_limits[2]),
+    plot_prep$score_limits[2]
+  )
 
   home_team <- plot_prep$home_team
   away_team <- plot_prep$away_team
@@ -448,14 +486,27 @@ build_score_combo_plot <- function(
       }
 
       ggplot2$ggplot(plot_data, ggplot2$aes(pred_home, pred_away)) +
-        ggplot2$stat_bin_hex(
-          ggplot2$aes(
-            fill = combo_label,
-            color = total_bin,
-            alpha = after_stat(count)
-          ),
-          binwidth = hex_binwidth
-        ) +
+        (if (heatmap_shape == "hex") {
+          ggplot2$stat_bin_hex(
+            ggplot2$aes(
+              fill = combo_label,
+              color = total_bin,
+              alpha = after_stat(count)
+            ),
+            binwidth = hex_binwidth,
+            linewidth = hex_linewidth
+          )
+        } else {
+          ggplot2$stat_bin_2d(
+            ggplot2$aes(
+              fill = combo_label,
+              color = total_bin,
+              alpha = after_stat(count)
+            ),
+            binwidth = hex_binwidth,
+            linewidth = hex_linewidth
+          )
+        }) +
         ggplot2$scale_fill_manual(
           values = combo_colors,
           breaks = combo_levels,
@@ -474,8 +525,8 @@ build_score_combo_plot <- function(
           fill = ggplot2$guide_legend(
             override.aes = list(
               color = unname(legend_outline_colors),
-              alpha = 1,
-              linewidth = 0.6
+              alpha = 0.85,
+              linewidth = 1
             )
           )
         ) +
@@ -511,9 +562,10 @@ build_score_combo_plot <- function(
           y = "Away points",
           fill = "Cover/Total"
         ) +
-        ggplot2$coord_equal(
-          xlim = plot_prep$score_limits,
-          ylim = plot_prep$score_limits
+        ggplot2$coord_cartesian(
+          xlim = c(plot_prep$score_limits[1], plot_lims_max),
+          ylim = c(plot_prep$score_limits[1], plot_lims_max),
+          ratio = 1
         ) +
         ggplot2$theme_minimal() +
         ggside$theme_ggside_void() +

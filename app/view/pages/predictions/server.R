@@ -11,31 +11,50 @@ box::use(
 )
 
 box::use(
-  app / logic / data / startup[
-    game_data,
-    team_strength_negbinom_summary,
-    teams,
-    teams_data
-  ],
-  app / logic / predictions / games / core[
-    get_prediction_context,
-    make_team_palettes,
-    prepare_schedule_indices
-  ],
-  app / logic / predictions / games / plot_prep[
-    make_joint_plot_prep,
-    make_score_plot_prep
-  ],
-  app / logic / predictions / games / plots[
-    build_joint_prob_plot,
-    build_score_combo_plot,
-    build_score_prob_plot
-  ],
+  app /
+    logic /
+    data /
+    startup[
+      game_data,
+      team_strength_negbinom_summary,
+      teams,
+      teams_data
+    ],
+  app /
+    logic /
+    predictions /
+    games /
+    core[
+      get_prediction_context,
+      make_team_palettes,
+      prepare_schedule_indices
+    ],
+  app /
+    logic /
+    predictions /
+    games /
+    plot_prep[
+      make_joint_plot_prep,
+      make_score_plot_prep
+    ],
+  app /
+    logic /
+    predictions /
+    games /
+    plots[
+      build_joint_prob_plot,
+      build_score_combo_plot,
+      build_score_prob_plot
+    ],
   app / logic / predictions / games / probabilities[compute_game_probabilities],
-  app / logic / predictions / games / rvars[
-    get_predicted_rvars,
-    get_team_strength_rvars
-  ],
+  app /
+    logic /
+    predictions /
+    games /
+    rvars[
+      get_predicted_rvars,
+      get_team_strength_rvars
+    ],
   app / logic / utils / numbers[same_number],
   app / logic / utils / odds[prob_to_american_odds],
   app / view / shared / reactable_theme[bs_reactable_theme],
@@ -136,7 +155,9 @@ server <- function(id, dark_mode = NULL) {
       selected_game_pending <- input$game_select
       session$onFlushed(
         function() {
-          if (!identical(shiny$isolate(input$game_select), selected_game_pending)) {
+          if (
+            !identical(shiny$isolate(input$game_select), selected_game_pending)
+          ) {
             return()
           }
           display_state(list(
@@ -339,6 +360,7 @@ server <- function(id, dark_mode = NULL) {
           palettes = palettes,
           spread_line = state$spread,
           total_line = state$total,
+          heatmap_shape = input$predictions_plot_shape,
           show_spread_line = flags$show_spread_line,
           show_total_line = flags$show_total_line,
           show_prob_labels = flags$show_prob_labels
@@ -360,6 +382,7 @@ server <- function(id, dark_mode = NULL) {
           palettes = palettes,
           spread_line = state$spread,
           total_line = state$total,
+          heatmap_shape = input$predictions_plot_shape,
           show_spread_line = flags$show_spread_line,
           show_total_line = flags$show_total_line,
           show_prob_labels = flags$show_prob_labels
@@ -373,6 +396,7 @@ server <- function(id, dark_mode = NULL) {
         state <- display_state()
         flags <- plot_flags()
         plot_prep <- score_plot_prep()$mu
+
         if (identical(input$score_plot_mode, "combo")) {
           build_score_combo_plot(
             plot_prep = plot_prep,
@@ -380,6 +404,7 @@ server <- function(id, dark_mode = NULL) {
             palettes = palettes,
             spread_line = state$spread,
             total_line = state$total,
+            heatmap_shape = input$predictions_plot_shape,
             show_spread_line = flags$show_spread_line,
             show_total_line = flags$show_total_line,
             show_prob_labels = flags$show_prob_labels
@@ -391,6 +416,7 @@ server <- function(id, dark_mode = NULL) {
             palettes = palettes,
             spread_line = state$spread,
             total_line = state$total,
+            heatmap_shape = input$predictions_plot_shape,
             show_spread_line = flags$show_spread_line,
             show_total_line = flags$show_total_line,
             show_prob_labels = flags$show_prob_labels
@@ -413,6 +439,7 @@ server <- function(id, dark_mode = NULL) {
             palettes = palettes,
             spread_line = state$spread,
             total_line = state$total,
+            heatmap_shape = input$predictions_plot_shape,
             show_spread_line = flags$show_spread_line,
             show_total_line = flags$show_total_line,
             show_prob_labels = flags$show_prob_labels
@@ -424,6 +451,7 @@ server <- function(id, dark_mode = NULL) {
             palettes = palettes,
             spread_line = state$spread,
             total_line = state$total,
+            heatmap_shape = input$predictions_plot_shape,
             show_spread_line = flags$show_spread_line,
             show_total_line = flags$show_total_line,
             show_prob_labels = flags$show_prob_labels
@@ -433,20 +461,31 @@ server <- function(id, dark_mode = NULL) {
       bg = "transparent"
     )
 
-    session$onFlushed(function() {
-      shiny$outputOptions(output, "joint_y_prob_plot", suspendWhenHidden = TRUE)
-      shiny$outputOptions(output, "joint_mu_prob_plot", suspendWhenHidden = TRUE)
-      shiny$outputOptions(
-        output,
-        "joint_score_y_prob_plot",
-        suspendWhenHidden = TRUE
-      )
-      shiny$outputOptions(
-        output,
-        "joint_score_mu_prob_plot",
-        suspendWhenHidden = TRUE
-      )
-    }, once = TRUE)
+    session$onFlushed(
+      function() {
+        shiny$outputOptions(
+          output,
+          "joint_y_prob_plot",
+          suspendWhenHidden = TRUE
+        )
+        shiny$outputOptions(
+          output,
+          "joint_mu_prob_plot",
+          suspendWhenHidden = TRUE
+        )
+        shiny$outputOptions(
+          output,
+          "joint_score_y_prob_plot",
+          suspendWhenHidden = TRUE
+        )
+        shiny$outputOptions(
+          output,
+          "joint_score_mu_prob_plot",
+          suspendWhenHidden = TRUE
+        )
+      },
+      once = TRUE
+    )
   })
 }
 

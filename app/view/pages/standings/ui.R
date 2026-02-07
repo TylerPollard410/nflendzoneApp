@@ -13,7 +13,7 @@ ui <- function(id) {
   bslib$card(
     bslib$card_header(
       shiny$div(
-        style = "display:flex; align-items:center; justify-content:space-between; gap: 0rem;",
+        style = "display:flex; align-items:center; justify-content:space-between; gap: 1rem;",
         shiny$h3("NFL Standings", style = "margin:0;"),
         shiny$selectInput(
           ns("season_select"),

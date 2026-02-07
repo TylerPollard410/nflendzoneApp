@@ -33,16 +33,16 @@ ui <- function(id) {
           title = "Lines",
           id = ns("lines_sidebar"),
           width = 400,
-          shiny$radioButtons(
-            inputId = ns("score_plot_mode"),
-            label = "Home/Away plot",
-            choices = c(
-              "Classic density" = "classic",
-              "Cover/Total combos" = "combo"
-            ),
-            selected = "classic",
-            width = "100%"
-          ),
+          # shiny$radioButtons(
+          #   inputId = ns("score_plot_mode"),
+          #   label = "Home/Away plot",
+          #   choices = c(
+          #     "Classic density" = "classic",
+          #     "Cover/Total combos" = "combo"
+          #   ),
+          #   selected = "classic",
+          #   width = "100%"
+          # ),
           noUiSliderInput(
             inputId = ns("spread_line_slider"),
             label = "Spread line",
@@ -80,22 +80,22 @@ ui <- function(id) {
             color = "purple",
             format = wNumbFormat(decimals = 1),
             height = "10px"
-          ),
-          shiny$checkboxInput(
-            inputId = ns("show_spread_line"),
-            label = "Show spread line",
-            value = TRUE
-          ),
-          shiny$checkboxInput(
-            inputId = ns("show_total_line"),
-            label = "Show total line",
-            value = TRUE
-          ),
-          shiny$checkboxInput(
-            inputId = ns("show_prob_labels"),
-            label = "Show probability labels",
-            value = TRUE
           )
+          # shiny$checkboxInput(
+          #   inputId = ns("show_spread_line"),
+          #   label = "Show spread line",
+          #   value = TRUE
+          # ),
+          # shiny$checkboxInput(
+          #   inputId = ns("show_total_line"),
+          #   label = "Show total line",
+          #   value = TRUE
+          # ),
+          # shiny$checkboxInput(
+          #   inputId = ns("show_prob_labels"),
+          #   label = "Show probability labels",
+          #   value = TRUE
+          # )
         ),
         bslib$layout_columns(
           col_widths = bslib$breakpoints(xs = c(12, 12), lg = c(4, 8)),
@@ -108,6 +108,44 @@ ui <- function(id) {
           bslib$navset_card_tab(
             id = ns("plots_tabset"),
             full_screen = TRUE,
+            sidebar = bslib$sidebar(
+              id = ns("sidebar"),
+              shiny$radioButtons(
+                inputId = ns("predictions_plot_shape"),
+                label = "Heatmap shape",
+                choices = c(
+                  "Hexagon" = "hex",
+                  "Rectangle" = "rect"
+                ),
+                selected = "hex",
+                width = "100%"
+              ),
+              shiny$radioButtons(
+                inputId = ns("score_plot_mode"),
+                label = "Home/Away plot density",
+                choices = c(
+                  "Classic density" = "classic",
+                  "Cover/Total combos" = "combo"
+                ),
+                selected = "classic",
+                width = "100%"
+              ),
+              shiny$checkboxInput(
+                inputId = ns("show_spread_line"),
+                label = "Show spread line",
+                value = TRUE
+              ),
+              shiny$checkboxInput(
+                inputId = ns("show_total_line"),
+                label = "Show total line",
+                value = TRUE
+              ),
+              shiny$checkboxInput(
+                inputId = ns("show_prob_labels"),
+                label = "Show probability labels",
+                value = TRUE
+              )
+            ),
             bslib$nav_panel(
               title = "Simulated (y): Result/Total",
               bslib$card_body(

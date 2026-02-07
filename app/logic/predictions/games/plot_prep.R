@@ -50,13 +50,18 @@ make_joint_plot_prep <- function(
       )
     )
 
+  res_rng <- range(plot_draws$pred_result, na.rm = TRUE)
+  tot_rng <- range(plot_draws$pred_total, na.rm = TRUE)
+
   labels <- make_game_labels(home_team, away_team, probs_kind)
 
   c(
     list(
       plot_draws = plot_draws,
       home_team = home_team,
-      away_team = away_team
+      away_team = away_team,
+      res_rng = res_rng,
+      tot_rng = tot_rng
     ),
     labels
   )
