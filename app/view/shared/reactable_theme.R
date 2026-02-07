@@ -11,6 +11,14 @@ bs_reactable_theme <- function() {
     borderColor = "var(--bs-border-color, #dee2e6)",
     stripedColor = "var(--bs-tertiary-bg, rgba(0, 0, 0, 0.03))",
     highlightColor = "var(--bs-secondary-bg, rgba(0, 0, 0, 0.05))",
+    rowStyle = list(
+      "&.rt-tr-striped-sticky" = list(
+        backgroundColor = "var(--bs-tertiary-bg, rgba(0, 0, 0, 0.03))"
+      ),
+      "&.rt-tr-highlight-sticky:hover" = list(
+        backgroundColor = "var(--bs-secondary-bg, rgba(0, 0, 0, 0.05))"
+      )
+    ),
     headerStyle = list(
       fontWeight = 600,
       color = "var(--bs-emphasis-color, var(--bs-body-color))",

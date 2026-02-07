@@ -9,7 +9,11 @@ box::use(
 
 box::use(
   app / logic / data / startup[game_data, teams_data],
-  app / view / pages / standings / tables[make_playoffs_table, make_standings_table],
+  app /
+    view /
+    pages /
+    standings /
+    tables[make_playoffs_table, make_standings_table],
   app / view / shared / dark_mode[is_dark_mode_reactive],
 )
 
@@ -116,7 +120,7 @@ server <- function(id, dark_mode = NULL) {
           bslib$card_body(reactable$reactableOutput(ns("nfl_table")))
         ),
         bslib$layout_columns(
-          col_widths = c(6, 6),
+          col_widths = bslib$breakpoints(xs = c(12, 12), lg = c(6, 6)),
           gap = "0.75rem",
           bslib$card(
             bslib$card_header(
@@ -262,7 +266,7 @@ server <- function(id, dark_mode = NULL) {
       ns <- session$ns
       shiny$tagList(
         bslib$layout_columns(
-          col_widths = c(6, 6),
+          col_widths = bslib$breakpoints(xs = c(12, 12), lg = c(6, 6)),
           gap = "0.75rem",
           bslib$card(
             bslib$card_header("AFC Seeds"),
