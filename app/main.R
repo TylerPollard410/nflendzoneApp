@@ -43,17 +43,17 @@ ui <- function(id) {
     bslib$nav_panel(
       title = "Standings",
       value = "standings",
-      icon = bs_icon("table"),
+      icon = bs_icon("list-ol"),
       standings_ui(ns("standings"))
     ),
     bslib$nav_menu(
       title = "Predictions",
       value = "predictions",
-      icon = bs_icon("three-dots"),
+      icon = shiny$icon("wand-magic-sparkles"),
       bslib$nav_panel(
         "Games",
         value = "games",
-        icon = bs_icon("info-circle"),
+        icon = shiny$icon("football"),
         predictions_ui(ns("predictions_games"))
       )
     ),
