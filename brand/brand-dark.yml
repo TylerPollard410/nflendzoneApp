@@ -1,0 +1,166 @@
+# Standalone dark-mode brand definition.
+# Keep shared values in sync with light-brand.yml.
+
+meta:
+  name:
+    full: Tyler Pollard dark brand
+    short: TP Dark
+  link:
+    home: https://tylerpollard410.github.io
+    github: https://github.com/TylerPollard410/brand
+logo:
+  # Shared assets for Quarto + Bootstrap/Shiny projects.
+  images:
+    icon:
+      path: logos/tyler-pollard-icon.png
+      alt: "Tyler Pollard icon"
+    header-logo:
+      path: logos/tyler-pollard-header-logo.png
+      alt: "Tyler Pollard"
+    header-logo-dark:
+      path: logos/personal-header-dark.png
+      alt: "Tyler Pollard dark"
+    header-logo-light:
+      path: logos/tyler-pollard-header-logo-light.png
+      alt: "Tyler Pollard light"
+  small: icon
+  medium: header-logo
+    # light: header-logo-on-light
+    # dark: header-logo-on-dark
+  large: header-logo
+    # If you add dedicated variants later:
+    # dark: header-logo-on-dark
+    # light: header-logo-on-light
+    
+color:
+  palette:
+    # Retro core
+    tp-purple: "#6B2EFF"  # saturated but printable purple
+    tp-pink: "#FF5BC8"    # neon pink accent
+    tp-teal: "#00E5D4"    # cyan-teal accent 
+    tp-cyan: "#03c7e8"
+    tp-green: "#6fff00"
+    tp-orange: "#FF7A1A"
+    tp-gold: "#FFC857"
+    tp-yellow: "#FFC857"
+
+    blue:    "#0d6efd"
+    indigo:  "#6610f2"
+    purple:  tp-purple
+    pink:    tp-pink
+    red:     "#dc3545"
+    orange:  tp-orange
+    yellow:  tp-yellow
+    green:   tp-green
+    teal:    tp-teal
+    cyan:    "#0dcaf0"
+
+    # Grays
+    white:    "#fff"
+    gray-100: "#f8f9fa"
+    gray-200: "#e9ecef"
+    gray-300: "#dee2e6"
+    gray-400: "#ced4da"
+    gray-500: "#adb5bd"
+    gray-600: "#6c757d"
+    gray-700: "#495057"
+    gray-800: "#343a40"
+    gray-900: "#212529"
+    black:    "#000"
+
+  background: "#121212" # The main background color. Tyically will be close to white and must have high contrast with the foreground color.
+  foreground: "#f2f2f2" # The main text color. Typically will be close to black and must have high contrast with the background color.
+  primary: purple # The primary accent color, used for hyperlinks, active states, and primary action buttons.
+  # secondary: cyan # The secondary accent color, often used for lighter text or disabled states.
+  # tertiary: gray-700 # The tertiary accent color, used for hover states, accents, and wells.
+  success: green # The color used for positive or successful actions and information.
+  info: cyan # The color used for neutral or informational actions and information.
+  warning: yellow # The color used for warning or cautionary actions and information.
+  danger: pink # The color used for errors, dangerous actions, or negative information.
+  light: white # A bright color, used as a high-contrast foreground color on dark elements or low-contrast background color on light elements.
+  dark: gray-800 # A dark color, used as a high-contrast foreground color on light elements or high-contrast background color on light elements.
+
+typography:
+  fonts:
+    # Primary brand font (retro-modern, excellent numerals)
+    - family: Space Grotesk
+      source: google
+      weight: [400, 500, 600, 700]
+      style: [normal]
+
+    # Monospace for code, stats, tables
+    - family: JetBrains Mono
+      source: google
+      weight: [400, 600]
+      style: [normal, italic]
+
+  base:
+    family: Space Grotesk
+    weight: 400
+    size: 1rem
+    line-height: 1.5
+    # color intentionally inherited from the active Bootstrap theme
+
+  headings:
+    family: Space Grotesk
+    weight: 600
+    line-height: 1.2
+    color: danger
+
+  monospace:
+    family: JetBrains Mono
+    weight: 400
+    size: 0.9em
+
+  monospace-inline:
+    color: orange
+    background-color: gray-800
+
+  monospace-block:
+    color: orange
+    background-color: gray-800
+    line-height: 1.4
+
+  link:
+    weight: 600
+    color: warning
+    decoration: underline
+
+defaults:
+  bootstrap:
+    # Bootstrap 5 placeholders (safe to keep empty until needed)
+    defaults:
+      version: 5
+      # Force dark-surface derivations when compiling standalone dark brand CSS
+      # body-emphasis-color: "#f2f2f2"
+      # body-secondary-bg: "#2b2b2b"
+      # body-tertiary-bg: "#1f1f1f"
+      # border-color: "#4f4f4f"
+    rules: |
+      /* Global navbar logo sizing (applies to Quarto + bslib Bootstrap navbars) */
+      .navbar-brand .navbar-logo,
+      .navbar-brand img {
+        max-height: 48px;
+        width: auto;
+      }
+    # functions: ""
+    # mixins: ""
+  quarto:
+    format:
+      # Quarto format placeholders (keep allowed formats only)
+      html:
+        title-block-banner: "var(--bs-cyan)"
+        title-block-banner-color: "var(--bs-black)" # Cyan background needs dark text
+
+      # dashboard: 
+      # revealjs: 
+      # typst:
+  shiny:
+    # Shiny/bslib placeholders
+    theme:
+      preset: bootstrap
+      version: 5
+      #defaults:
+        #bslib-dashboard-design: false
+      #rules: |
+      #  .navbar-brand { color: $brand-pink }

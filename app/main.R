@@ -1,33 +1,54 @@
 box::use(
   box[export],
+  brand.yml[brand_use_logo],
   bsicons[bs_icon],
   bslib,
-  sass[sass_file],
   shiny,
 )
 
 box::use(
-  app / view / pages / predictions[predictions_server, predictions_ui],
+  app / view / themes / themes,
+  #app / view / themes / light[theme_light, brand_light_yml],
 )
 
 box::use(
   app / view / pages / standings[standings_server, standings_ui],
+  app / view / pages / predictions[predictions_server, predictions_ui],
 )
 
-# Keep app theming centralized here for now.
-app_theme <- bslib$bs_theme(version = 5) |>
-  bslib$bs_add_rules(sass_file("app/styles/main.scss"))
-
+#' @export
 ui <- function(id) {
   ns <- shiny$NS(id)
 
   bslib$page_navbar(
-    title = "NFL EndZone Anaytics",
+    #shiny$span(
+    #class = "d-flex align-items-center",
+    title = shiny$a(
+      class = "text-decoration-none",
+      style = "color: inherit;",
+      href = "/",
+      brand_use_logo(themes$brand_light_yml, "small"), # height = 48),
+      shiny$span(
+        #   class = "ms-2",
+        #   style = "white-space: nowrap;",
+        "NFL EndZone Analytics"
+      )
+    ),
+    # shiny$span(
+    #   bslib$input_dark_mode(
+    #     id = ns("dark_mode") #,
+    #     #mode = "light"
+    #   )
+    # )
+    # ),
     id = ns("navbar"),
     fillable = TRUE,
-    theme = app_theme,
+    theme = themes$theme_brand_light,
+    #theme = themes$theme_brand_dark,
     navbar_options = bslib$navbar_options(
-      position = "static-top"
+      class = "bg-primary",
+      position = "static-top",
+      theme = "dark"
     ),
     fillable_mobile = FALSE,
     padding = 0,
@@ -60,13 +81,14 @@ ui <- function(id) {
     bslib$nav_spacer(),
     bslib$nav_item(
       bslib$input_dark_mode(
-        id = ns("dark_mode"),
-        mode = "dark"
+        id = ns("dark_mode")
+        #mode = "dark"
       )
     )
   )
 }
 
+#' @export
 server <- function(id) {
   shiny$moduleServer(id, function(input, output, session) {
     standings_server(
@@ -80,5 +102,3 @@ server <- function(id) {
     )
   })
 }
-
-export(ui, server)
