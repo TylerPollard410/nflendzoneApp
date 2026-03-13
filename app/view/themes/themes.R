@@ -11,15 +11,8 @@ box::use(
 build_brand_theme <- function(brand) {
   bslib$bs_theme(
     version = 5,
-    preset = "bootstrap",
-    brand = brand,
-    "enable-gradients" = TRUE,
-    "enable-shadows" = TRUE
-  ) |>
-    bslib$bs_add_variables(
-      "navbar-bg" = "$primary",
-      .where = "declarations"
-    )
+    brand = brand
+  )
 }
 
 # Load the unified brand once so theme creation and brand asset usage stay in

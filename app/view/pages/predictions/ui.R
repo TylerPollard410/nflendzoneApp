@@ -105,11 +105,13 @@ ui <- function(id) {
             bslib$card_header("Cover Probability Summary"),
             reactable$reactableOutput(ns("prob_summary"), height = "100%")
           ),
-          bslib$navset_card_tab(
+          bslib$navset_card_pill(
             id = ns("plots_tabset"),
             full_screen = TRUE,
             sidebar = bslib$sidebar(
               id = ns("sidebar"),
+              title = "Plot Options",
+              open = FALSE,
               shiny$radioButtons(
                 inputId = ns("predictions_plot_shape"),
                 label = "Heatmap shape",
@@ -171,8 +173,8 @@ ui <- function(id) {
               bslib$card_body(
                 class = "predictions-plot",
                 shiny$plotOutput(
-                  outputId = ns("joint_score_y_prob_plot"),
-                  height = "520px"
+                  outputId = ns("joint_score_y_prob_plot")
+                  #height = "520px"
                 )
               )
             ),
