@@ -1,0 +1,176 @@
+meta:
+  name:
+    full: Tyler Pollard
+    short: TP
+  description: Statistician and operations research analyst focused on Bayesian
+    modeling, predictive analytics, and data visualization.
+  link:
+    home: https://tylerpollard410.github.io
+    github: https://github.com/TylerPollard410
+    linkedin: https://www.linkedin.com/in/tyler-pollard-763b8315b/
+    email: mailto:tylerpollard410@gmail.com
+
+logo:
+  images:
+    icon:
+      path: logos/tyler-pollard-icon.png
+      alt: Tyler Pollard icon
+    header-logo:
+      path: logos/tyler-pollard-header-logo.png
+      alt: Tyler Pollard
+    header-logo-dark:
+      path: logos/tyler-pollard-header-logo-dark.png
+      alt: Tyler Pollard dark
+    header-logo-light:
+      path: logos/tyler-pollard-header-logo-light.png
+      alt: Tyler Pollard light
+  small: icon
+  medium: header-logo
+  large: header-logo
+
+color:
+  palette:
+    tp-light-bg: "#f0f0f0"
+    tp-light-fg: "#222222"
+    tp-dark-bg: "#121212"
+    tp-dark-fg: "#f2f2f2"
+    tp-purple: "#6B2EFF"
+    tp-purple-dark: "#4F1FCC"
+    tp-pink: "#FF5BC8"
+    tp-pink-dark: "#BE2F93"
+    tp-teal: "#00E5D4"
+    tp-teal-dark: "#0A7A73"
+    tp-cyan: "#03c7e8"
+    tp-cyan-dark: "#0B6E80"
+    tp-green: "#6fff00"
+    tp-green-dark: "#227A00"
+    tp-orange: "#FF7A1A"
+    tp-orange-dark: "#A94E10"
+    tp-yellow: "#FFC857"
+    tp-yellow-dark: "#8A5A00"
+    blue: "#0d6efd"
+    indigo: "#6610f2"
+    purple: tp-purple
+    pink: tp-pink
+    red: "#dc3545"
+    orange: tp-orange
+    yellow: tp-yellow
+    green: tp-green
+    teal: tp-teal
+    cyan: tp-cyan
+    white: "#fff"
+    gray-100: "#f8f9fa"
+    gray-200: "#e9ecef"
+    gray-300: "#dee2e6"
+    gray-400: "#ced4da"
+    gray-500: "#adb5bd"
+    gray-600: "#6c757d"
+    gray-700: "#495057"
+    gray-800: "#343a40"
+    gray-900: "#212529"
+    black: "#000"
+  background:
+    light: tp-light-bg
+    dark: tp-dark-bg
+  foreground:
+    light: tp-light-fg
+    dark: tp-dark-fg
+  primary: purple
+  secondary:
+    light: gray-600
+    dark: gray-500
+  tertiary:
+    light: gray-200
+    dark: gray-800
+  success: green
+  info: cyan
+  warning: yellow
+  danger: pink
+  light: tp-dark-fg
+  dark: tp-dark-bg
+
+typography:
+  fonts:
+    - family: Space Grotesk
+      source: google
+      weight:
+        - 400
+        - 500
+        - 600
+        - 700
+      style: normal
+    - family: JetBrains Mono
+      source: google
+      weight:
+        - 400
+        - 600
+      style:
+        - normal
+        - italic
+  base:
+    family: Space Grotesk
+    weight: 400
+    size: 1rem
+    line-height: 1.5
+  headings:
+    family: Space Grotesk
+    weight: 600
+    line-height: 1.2
+    color:
+      light: tp-pink
+      dark: tp-pink
+  monospace:
+    family: JetBrains Mono
+    weight: 400
+    size: 0.9em
+  monospace-inline:
+    weight: 400
+    color:
+      light: tp-orange-dark
+      dark: tp-orange
+    # background-color:
+    #   light: gray-200
+    #   dark: gray-900
+  monospace-block:
+    color:
+      light: tp-orange-dark
+      dark: tp-orange
+    # background-color:
+    #   light: gray-200
+    #   dark: gray-900
+    line-height: 1.4
+  link:
+    weight: 600
+    color:
+      light: tp-yellow
+      dark: tp-yellow
+    decoration: underline
+
+defaults:
+  bootstrap:
+    defaults:
+      version: 5
+      enable-gradients: true
+      enable-shadows: true
+      navbar-bg: $brand-purple
+      min-contrast-ratio: 3.0
+    rules: |
+      /* Global navbar logo sizing (applies to Quarto + bslib Bootstrap navbars) */
+      .navbar-brand .navbar-logo,
+      .navbar-brand img {
+        max-height: 48px;
+        width: auto;
+      }
+  quarto:
+    format:
+      html:
+        title-block-banner: var(--bs-cyan)
+        title-block-banner-color: var(--bs-black)
+  shiny:
+    theme:
+      preset: shiny
+      version: 5
+      defaults:
+        headings-color-dark: $brand-tp-pink
+        link-color: shade-color($brand-tp-yellow, 20%)
+        link-color-dark: $brand-tp-yellow

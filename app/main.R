@@ -1,38 +1,77 @@
 box::use(
   box[export],
+  brand.yml[brand_use_logo],
   bsicons[bs_icon],
   bslib,
-  sass[sass_file],
   shiny,
 )
 
 box::use(
-  app / view / pages / predictions[predictions_server, predictions_ui],
+  app / view / themes / themes,
+  #app / view / themes / light[theme_light, brand_light_yml],
 )
 
 box::use(
   app / view / pages / standings[standings_server, standings_ui],
+  app / view / pages / predictions[predictions_server, predictions_ui],
 )
 
-# Keep app theming centralized here for now.
-app_theme <- bslib$bs_theme(version = 5) |>
-  bslib$bs_add_rules(sass_file("app/styles/main.scss"))
-
+#' @export
 ui <- function(id) {
   ns <- shiny$NS(id)
 
   bslib$page_navbar(
-    title = "NFL EndZone Anaytics",
+    title = shiny$a(
+      class = "text-decoration-none",
+      style = "color: inherit;",
+      href = "#",
+      # class = "navbar-logo",
+      brand_use_logo(
+        class = "d-inline-block align-text-bottom",
+        themes$brand_light_yml,
+        "small",
+        height = 48
+      ),
+      #shiny$span(
+      "NFL EndZone Analytics"
+      #)
+    ),
     id = ns("navbar"),
     fillable = TRUE,
-    theme = app_theme,
+    theme = themes$theme_brand_light,
     navbar_options = bslib$navbar_options(
-      position = "static-top"
+      class = "bg-primary",
+      position = "static-top",
+      theme = "dark"
     ),
-    fillable_mobile = FALSE,
+    fillable_mobile = TRUE,
     padding = 0,
     selected = "standings",
-    header = list(
+    header = shiny$tagList(
+      shiny$tags$head(
+        shiny$tags$link(
+          rel = "icon",
+          type = "image/png",
+          href = "static/favicon-96x96.png",
+          sizes = "96x96"
+        ),
+        shiny$tags$link(
+          rel = "icon",
+          type = "image/svg+xml",
+          href = "static/favicon.svg"
+        ),
+        shiny$tags$link(rel = "shortcut icon", href = "static/favicon.ico"),
+        shiny$tags$link(
+          rel = "apple-touch-icon",
+          sizes = "180x180",
+          href = "static/apple-touch-icon.png"
+        ),
+        shiny$tags$meta(
+          name = "apple-mobile-web-app-title",
+          content = "NFLEndZoneAnalytics"
+        ),
+        shiny$tags$link(rel = "manifest", href = "static/site.webmanifest")
+      ),
       shiny$useBusyIndicators()
     ),
     bslib$nav_panel(
@@ -67,6 +106,7 @@ ui <- function(id) {
   )
 }
 
+#' @export
 server <- function(id) {
   shiny$moduleServer(id, function(input, output, session) {
     standings_server(
@@ -80,5 +120,3 @@ server <- function(id) {
     )
   })
 }
-
-export(ui, server)

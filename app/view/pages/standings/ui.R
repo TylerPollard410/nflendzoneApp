@@ -27,7 +27,7 @@ ui <- function(id) {
     ),
     bslib$card_body(
       padding = "0.5rem",
-      bslib$navset_underline(
+      bslib$navset_pill(
         id = ns("navset"),
         bslib$nav_panel(
           title = "Standings",
