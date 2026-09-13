@@ -1,7 +1,9 @@
 box::use(
   box[export],
+  cli[cli_warn],
   dplyr[distinct],
   nflreadr[get_current_season, get_current_week, load_from_url, load_teams],
+  rlang[abort],
 )
 
 box::use(
@@ -37,6 +39,86 @@ load_release_asset <- function(path) {
   load_from_url(paste0(base_repo_url, path))
 }
 
+latest_prediction_asset_url <- function(urls, tag) {
+  stems <- sub("\\.[^.]+$", "", basename(urls))
+  matches <- regmatches(
+    stems,
+    regexec(paste0("^", tag, "_([0-9]{4})(?:_([0-9]+))?$"), stems)
+  )
+
+  seasons <- vapply(
+    matches,
+    function(x) if (length(x) >= 2L) as.integer(x[[2]]) else NA_integer_,
+    integer(1)
+  )
+  weeks <- vapply(
+    matches,
+    function(x) {
+      if (length(x) >= 3L && !is.na(x[[3]])) {
+        as.integer(x[[3]])
+      } else {
+        0L
+      }
+    },
+    integer(1)
+  )
+
+  keep <- !is.na(seasons)
+  if (!any(keep)) {
+    abort(paste0(
+      "No usable prediction assets were found in the ",
+      github_data_repo,
+      " release for ",
+      tag,
+      "."
+    ))
+  }
+
+  candidates <- urls[keep]
+  order_idx <- order(seasons[keep], weeks[keep])
+  candidates[order_idx[[length(order_idx)]]]
+}
+
+prediction_summary_urls <- pb_download_url_szn_wk(
+  "team_strength_negbinom_summary",
+  repo = github_data_repo,
+  seasons = current_season,
+  weeks = TRUE,
+  asset_ext = "rds",
+  warn_empty = FALSE
+)
+
+if (length(prediction_summary_urls) == 0L) {
+  all_prediction_summary_urls <- pb_download_url_szn_wk(
+    "team_strength_negbinom_summary",
+    repo = github_data_repo,
+    seasons = TRUE,
+    weeks = TRUE,
+    asset_ext = "rds"
+  )
+
+  if (length(all_prediction_summary_urls) == 0L) {
+    abort(paste0(
+      "No team strength prediction assets were found in ",
+      github_data_repo,
+      "."
+    ))
+  }
+
+  prediction_summary_urls <- latest_prediction_asset_url(
+    all_prediction_summary_urls,
+    "team_strength_negbinom_summary"
+  )
+
+  cli_warn(paste0(
+    "No prediction summary asset was found for season ",
+    current_season,
+    "; using the latest published asset instead: ",
+    basename(prediction_summary_urls),
+    "."
+  ))
+}
+
 season_standings_data <- load_release_asset(
   "season_standings/season_standings.rds"
 )
@@ -44,13 +126,7 @@ season_standings_data <- load_release_asset(
 team_features_data <- load_release_asset("team_features/team_features.rds")
 
 team_strength_negbinom_summary <- load_from_url(
-  pb_download_url_szn_wk(
-    "team_strength_negbinom_summary",
-    repo = github_data_repo,
-    seasons = current_season,
-    weeks = TRUE,
-    asset_ext = "rds"
-  )
+  prediction_summary_urls
 )
 
 export(

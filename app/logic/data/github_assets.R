@@ -14,6 +14,7 @@ pb_download_url_szn_wk <- function(
   seasons = TRUE,
   weeks = TRUE,
   asset_ext = NULL,
+  warn_empty = TRUE,
   .token = gh_token()
 ) {
   normalize_ext <- function(x) {
@@ -84,7 +85,7 @@ pb_download_url_szn_wk <- function(
 
   select_urls <- function(idx, what) {
     out <- all_urls[idx]
-    if (length(out) == 0L) {
+    if (length(out) == 0L && isTRUE(warn_empty)) {
       cli_warn(
         "No matching assets found for {.val {what}} in release {.val {tag}} ({.val {repo}})."
       )

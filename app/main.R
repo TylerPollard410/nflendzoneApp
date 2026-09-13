@@ -39,12 +39,12 @@ ui <- function(id) {
     id = ns("navbar"),
     fillable = TRUE,
     theme = themes$theme_brand_light,
-    # navbar_options = bslib$navbar_options(
-    #   class = "bg-primary",
-    #   position = "static-top",
-    #   theme = "dark"
-    # ),
-    fillable_mobile = FALSE,
+    navbar_options = bslib$navbar_options(
+      class = "bg-primary",
+      position = "static-top",
+      theme = "dark"
+    ),
+    fillable_mobile = TRUE,
     padding = 0,
     selected = "standings",
     header = shiny$tagList(
